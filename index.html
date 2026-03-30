@@ -763,7 +763,7 @@
       type: 'shift',
       name: fd.get('name'),
       week: fd.get('week'),
-      days: daySchedules,
+      days: JSON.stringify(daySchedules),
       note: fd.get('note') || '',
     };
     const rows = [
