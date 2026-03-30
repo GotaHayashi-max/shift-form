@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>シフト・勤怠管理｜ネクスゲート</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c26;
+    --border: #2a2a38;
+    --accent-shift: #00B4A0;
+    --accent-attend: #008F80;
+    --accent2-shift: #00C8B4;
+    --accent2-attend: #80DDD4;
+    --text: #e8e8f0;
+    --text2: #7070a0;
+    --success: #34d399;
+    --error: #f87171;
+    --radius: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    min-height: 100vh;
+    padding: 24px 16px 80px;
+  }
+
+  /* ヘッダー */
+  .header {
+    text-align: center;
+    padding: 36px 0 28px;
+  }
+  .header-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #00B4A0, #008F80);
+    color: #fff;
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 2px;
+    padding: 4px 14px;
+    border-radius: 100px;
+    margin-bottom: 16px;
+  }
+  .header h1 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+  .header p  { color: var(--text2); font-size: 13px; }
+
+  /* タブ切り替え */
+  .tabs {
+    display: flex;
+    max-width: 560px;
+    margin: 0 auto 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 4px;
+    gap: 4px;
+  }
+  .tab {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: transparent;
+    color: var(--text2);
+  }
+  .tab.active-shift {
+    background: var(--accent-shift);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(0,180,160,0.35);
+  }
+  .tab.active-attend {
+    background: var(--accent-attend);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(0,143,128,0.35);
+  }
+
+  /* フォームカード */
+  .form-card {
+    max-width: 560px;
+    margin: 0 auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px 24px;
+    display: none;
+  }
+  .form-card.active { display: block; }
+
+  .section-title {
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-title.shift  { color: var(--accent2-shift); }
+  .section-title.attend { color: var(--accent2-attend); }
+
+  .field { margin-bottom: 18px; }
+  .field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text2);
+    margin-bottom: 7px;
+  }
+  .field label .req { color: var(--accent2-shift); margin-left: 4px; }
+  .field label .req.g { color: var(--accent2-attend); }
+
+  .field input,
+  .field select,
+  .field textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 15px;
+    padding: 11px 14px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none;
+  }
+  .field input:focus,
+  .field select:focus,
+  .field textarea:focus {
+    border-color: var(--accent-shift);
+    box-shadow: 0 0 0 3px rgba(0,180,160,0.12);
+  }
+  .field.attend input:focus,
+  .field.attend select:focus {
+    border-color: var(--accent-attend);
+    box-shadow: 0 0 0 3px rgba(0,143,128,0.12);
+  }
+  .field select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%237070a0' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+    cursor: pointer;
+  }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* シフト希望の曜日グリッド */
+  .day-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .day-item label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text2);
+    margin-bottom: 6px;
+    display: block;
+  }
+  .day-item input {
+    font-size: 13px;
+    padding: 8px 10px;
+    text-align: center;
+  }
+
+  /* 勤怠のセクション区切り */
+  .attend-section {
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .attend-section.planned {
+    background: rgba(0,180,160,0.06);
+    border: 1px solid rgba(0,180,160,0.2);
+  }
+  .attend-section.actual {
+    background: rgba(0,143,128,0.06);
+    border: 1px solid rgba(0,143,128,0.2);
+  }
+  .attend-section-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-bottom: 14px;
+  }
+  .attend-section.planned .attend-section-title { color: var(--accent2-shift); }
+  .attend-section.actual  .attend-section-title { color: var(--accent2-attend); }
+
+  /* 実働時間プレビュー */
+  .jittsu-preview {
+    background: rgba(251,146,60,0.08);
+    border: 1px solid rgba(251,146,60,0.25);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .jittsu-label { font-size: 13px; color: var(--text2); }
+  .jittsu-value {
+    font-size: 24px;
+    font-weight: 700;
+    font-family: 'DM Mono', monospace;
+    color: #fb923c;
+  }
+
+  hr.divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 22px 0;
+  }
+
+  /* 送信ボタン */
+  .submit-btn {
+    width: 100%;
+    border: none;
+    border-radius: var(--radius);
+    padding: 15px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #fff;
+  }
+  .submit-btn.shift-btn  { background: var(--accent-shift); }
+  .submit-btn.attend-btn { background: var(--accent-attend); }
+  .submit-btn:hover { opacity: 0.88; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+  .submit-btn:active { transform: translateY(0); }
+  .submit-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* 確認オーバーレイ */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.78);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 200;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s;
+    padding: 16px;
+  }
+  .overlay.show { opacity: 1; pointer-events: all; }
+
+  .confirm-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px 24px;
+    width: 100%; max-width: 480px;
+    max-height: 85vh; overflow-y: auto;
+  }
+  .confirm-card h2 {
+    font-size: 17px; font-weight: 700;
+    margin-bottom: 18px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .confirm-row {
+    display: flex; justify-content: space-between;
+    align-items: flex-start;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+    gap: 12px;
+  }
+  .confirm-row:last-of-type { border-bottom: none; }
+  .confirm-label { font-size: 12px; color: var(--text2); flex-shrink: 0; margin-top: 2px; }
+  .confirm-value { font-size: 14px; font-weight: 500; text-align: right; word-break: break-all; }
+  .confirm-btns {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px; margin-top: 20px;
+  }
+  .btn-back {
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); border-radius: var(--radius);
+    padding: 13px; font-family: 'Noto Sans JP', sans-serif;
+    font-size: 14px; font-weight: 500; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-back:hover { border-color: var(--text2); }
+  .btn-confirm-s {
+    background: var(--accent-shift); border: none;
+    color: #fff; border-radius: var(--radius);
+    padding: 13px; font-family: 'Noto Sans JP', sans-serif;
+    font-size: 14px; font-weight: 700; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-confirm-a {
+    background: var(--accent-attend); border: none;
+    color: #fff; border-radius: var(--radius);
+    padding: 13px; font-family: 'Noto Sans JP', sans-serif;
+    font-size: 14px; font-weight: 700; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-confirm-s:hover, .btn-confirm-a:hover {
+    opacity: 0.88; box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  }
+
+  /* 成功画面 */
+  .success-screen {
+    display: none; text-align: center; padding: 48px 0;
+  }
+  .success-screen.show { display: block; }
+  .success-icon { font-size: 52px; margin-bottom: 14px; animation: pop 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+  @keyframes pop { from { transform: scale(0); } to { transform: scale(1); } }
+  .success-screen h2 { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+  .success-screen p  { color: var(--text2); font-size: 14px; margin-bottom: 24px; }
+  .btn-new {
+    display: inline-block;
+    border: none; border-radius: var(--radius);
+    padding: 13px 32px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 15px; font-weight: 700; cursor: pointer;
+    color: #fff; transition: all 0.2s;
+  }
+  .btn-new.s { background: var(--accent-shift); }
+  .btn-new.a { background: var(--accent-attend); }
+  .btn-new:hover { opacity: 0.88; transform: translateY(-1px); }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 12px 24px;
+    font-size: 14px; font-weight: 500;
+    display: flex; align-items: center; gap: 8px;
+    transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+    z-index: 300; white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.success { border-color: var(--success); color: var(--success); }
+  .toast.error   { border-color: var(--error);   color: var(--error);   }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-badge">NEXGATE</div>
+  <h1>シフト・勤怠管理</h1>
+  <p>シフト希望の提出と出退勤の記録ができます</p>
+</div>
+
+<!-- タブ -->
+<div class="tabs">
+  <button class="tab active-shift" onclick="switchTab('shift')">📅 シフト希望</button>
+  <button class="tab" id="tab-attend" onclick="switchTab('attend')">⏱ 勤怠記録</button>
+</div>
+
+<!-- ① シフト希望フォーム -->
+<div class="form-card active" id="card-shift">
+  <form id="shiftForm">
+    <div class="section-title shift">基本情報</div>
+
+    <div class="row2">
+      <div class="field">
+        <label>名前 <span class="req">*</span></label>
+        <select name="name" required>
+          <option value="">選択</option>
+          <option>福島大智</option>
+          <option>野田希</option>
+          <option>堀田聖奈</option>
+          <option>福田翔瑛</option>
+          <option>西脇優</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>対象期間 <span class="req">*</span></label>
+        <select name="week" required id="weekSelect" onchange="updateDeadlineNote()">
+          <option value="">選択してください</option>
+        </select>
+        <div id="deadlineNote" style="margin-top:8px;font-size:13px;color:var(--accent2-shift);font-weight:500;"></div>
+        <div style="margin-top:4px;font-size:11px;color:var(--text2);">
+          📌 提出ルール：第1週水曜19:00まで → 当月16日〜末日分／第3週水曜19:00まで → 翌月1日〜15日分
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider">
+    <div class="section-title shift">希望時間帯（月〜金）※土日祝は休み</div>
+
+    <div id="shiftDaysContainer"></div>
+
+    <hr class="divider">
+
+    <div class="field">
+      <label>備考</label>
+      <input type="text" name="note" placeholder="その他の希望・連絡事項があれば">
+    </div>
+
+    <button type="submit" class="submit-btn shift-btn">内容を確認する →</button>
+  </form>
+  <div class="success-screen" id="shift-success">
+    <div class="success-icon">✅</div>
+    <h2>シフト希望を提出しました！</h2>
+    <p>林さんに通知されました。</p>
+    <button class="btn-new s" onclick="resetShift()">続けて提出する</button>
+  </div>
+</div>
+
+<!-- ② 勤怠記録フォーム -->
+<div class="form-card" id="card-attend">
+  <form id="attendForm">
+    <div class="section-title attend">基本情報</div>
+
+    <div class="row2">
+      <div class="field attend">
+        <label>名前 <span class="req g">*</span></label>
+        <select name="name" required>
+          <option value="">選択</option>
+          <option>福島大智</option>
+          <option>野田希</option>
+          <option>堀田聖奈</option>
+          <option>福田翔瑛</option>
+          <option>西脇優</option>
+        </select>
+      </div>
+      <div class="field attend">
+        <label>日付 <span class="req g">*</span></label>
+        <input type="date" name="date" required>
+      </div>
+    </div>
+
+    <!-- 実際の打刻 -->
+    <div class="attend-section actual">
+      <div class="attend-section-title">🕐 打刻</div>
+      <div class="row2">
+        <div class="field attend">
+          <label>実際の出勤時刻 <span class="req g">*</span></label>
+          <input type="time" name="actualStart" required id="as" oninput="calcJittsu()">
+        </div>
+        <div class="field attend">
+          <label>実際の退勤時刻 <span class="req g">*</span></label>
+          <input type="time" name="actualEnd" required id="ae" oninput="calcJittsu()">
+        </div>
+      </div>
+      <div class="field attend">
+        <label>実際の休憩時間（時間）</label>
+        <select name="actualBreak" id="ab" onchange="calcJittsu()">
+          <option value="0">なし（0h）</option>
+          <option value="0.5">30分（0.5h）</option>
+          <option value="1" selected>1時間（1.0h）</option>
+          <option value="1.5">1時間30分（1.5h）</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- 実働時間プレビュー -->
+    <div class="jittsu-preview">
+      <span class="jittsu-label">⏱ 実働時間（自動計算）</span>
+      <span class="jittsu-value" id="jittsuVal">—</span>
+    </div>
+
+    <div class="field">
+      <label>備考</label>
+      <input type="text" name="note" placeholder="遅刻・早退の理由など">
+    </div>
+
+    <div style="background:rgba(0,180,160,0.07);border:1px solid rgba(0,180,160,0.25);border-radius:12px;padding:14px 16px;margin-bottom:18px;">
+      <div style="font-size:13px;font-weight:700;color:var(--accent2-attend);margin-bottom:6px;">📎 遅延証明書・病院の領収書など</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:10px;">証明書類は別のフォームからアップロードしてください。</div>
+      <a href="https://docs.google.com/forms/d/e/1FAIpQLScCAvJ6oAkZ5fQs2VY2jYFlF-i7k1C3_JjCIGAh74B9PHu3mg/viewform" target="_blank" id="certFormLink"
+        style="display:inline-block;background:var(--accent-attend);color:#fff;font-size:13px;font-weight:700;padding:9px 20px;border-radius:8px;text-decoration:none;">
+        証明書類を提出する →
+      </a>
+    </div>
+
+    <button type="submit" class="submit-btn attend-btn">内容を確認する →</button>
+  </form>
+  <div class="success-screen" id="attend-success">
+    <div class="success-icon">✅</div>
+    <h2>勤怠を記録しました！</h2>
+    <p>スプレッドシートに自動転記されました。</p>
+    <button class="btn-new a" onclick="resetAttend()">続けて記録する</button>
+  </div>
+</div>
+
+<!-- 確認オーバーレイ -->
+<div class="overlay" id="overlay">
+  <div class="confirm-card">
+    <h2 id="confirmTitle">📋 内容の確認</h2>
+    <div id="confirmContent"></div>
+    <div class="confirm-btns">
+      <button class="btn-back" onclick="closeConfirm()">← 修正する</button>
+      <button id="confirmBtn" onclick="doSubmit()">この内容で送信</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbw5sY-MqSkeNjnJA5ETdesDryB7Lo9nFkqNp8ejsiR1L486QMKt0wlRtMcjiKQaelcaQg/exec';
+
+  let currentType = 'shift';
+  let pendingData = null;
+
+  // 対象期間の選択肢を自動生成＋提出期限を表示
+  // ルール：
+  //   第1週水曜19:00まで → 当月16日〜末日のシフトを提出
+  //   第3週水曜19:00まで → 翌月1日〜15日のシフトを提出
+  function generatePeriodOptions() {
+    const select = document.getElementById('weekSelect');
+    const now = new Date();
+    const options = [];
+
+    // 当月・翌月・翌々月の候補を生成
+    for (let i = 0; i <= 2; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      const y = d.getFullYear();
+      const m = d.getMonth() + 1;
+      const mStr = m + '月';
+
+      // 上旬（1〜15日）
+      options.push({
+        value: `${y}/${String(m).padStart(2,'0')}/01-15`,
+        label: `${y}年${mStr}上旬（1日〜15日）`,
+        year: y, month: m, half: 'first'
+      });
+
+      // 下旬（16日〜末日）
+      const lastDay = new Date(y, m, 0).getDate();
+      options.push({
+        value: `${y}/${String(m).padStart(2,'0')}/16-${lastDay}`,
+        label: `${y}年${mStr}下旬（16日〜${lastDay}日）`,
+        year: y, month: m, half: 'second'
+      });
+    }
+
+    options.forEach(opt => {
+      const el = document.createElement('option');
+      el.value = opt.value;
+      el.textContent = opt.label;
+      select.appendChild(el);
+    });
+
+    // 今日に応じて適切な期間を自動選択
+    // 第1週水曜19:00まで → 当月下旬を選択
+    // 第3週水曜19:00まで → 翌月上旬を選択
+    const today = now.getDate();
+    const hour = now.getHours();
+    const dow = now.getDay(); // 0=日, 3=水
+
+    // 第1週水曜の判定（1〜7日の水曜）
+    const isWeek1Wed = (today >= 1 && today <= 7 && dow === 3);
+    // 第3週水曜の判定（15〜21日の水曜）
+    const isWeek3Wed = (today >= 15 && today <= 21 && dow === 3);
+
+    // 期限切れ判定（水曜19:00以降は次の期間へ）
+    const deadlinePassed = hour >= 19;
+
+    let defaultIndex = 1; // デフォルト：当月下旬
+
+    if (today <= 14 || (isWeek1Wed && !deadlinePassed)) {
+      // 当月下旬を提出する期間（第1週水曜19:00まで）
+      defaultIndex = 1; // 当月下旬
+    } else if (today >= 15 || (isWeek3Wed && !deadlinePassed)) {
+      // 翌月上旬を提出する期間（第3週水曜19:00まで）
+      defaultIndex = 2; // 翌月上旬
+    }
+
+    select.selectedIndex = defaultIndex;
+    updateDeadlineNote();
+  }
+
+  // 提出期限の説明を動的表示
+  function updateDeadlineNote() {
+    const select = document.getElementById('weekSelect');
+    const noteEl = document.getElementById('deadlineNote');
+    if (!select || !noteEl) return;
+    const val = select.value;
+    if (!val) { noteEl.textContent = ''; return; }
+
+    const parts = val.split('/');
+    const m = parseInt(parts[1]);
+    const range = parts[2];
+    const isFirst = range.startsWith('01');
+
+    if (isFirst) {
+      // 翌月上旬 → 第3週水曜19:00まで
+      const prevM = m === 1 ? 12 : m - 1;
+      noteEl.innerHTML = `⏰ 提出期限：<strong>${prevM}月 第3週水曜日 19:00まで</strong>`;
+    } else {
+      // 当月下旬 → 第1週水曜19:00まで
+      noteEl.innerHTML = `⏰ 提出期限：<strong>${m}月 第1週水曜日 19:00まで</strong>`;
+    }
+  }
+
+  generatePeriodOptions();
+
+  // 時間の選択肢を生成（9:00〜18:00、30分刻み）
+  function timeOptions(selectedVal) {
+    const times = [];
+    for (let h = 9; h <= 18; h++) {
+      ['00', '30'].forEach(m => {
+        if (h === 18 && m === '30') return;
+        times.push(`${String(h).padStart(2,'0')}:${m}`);
+      });
+    }
+    return times.map(t =>
+      `<option value="${t}" ${t === selectedVal ? 'selected' : ''}>${t}</option>`
+    ).join('');
+  }
+
+  // 対象期間に応じて月〜金の日付リストを生成
+  function generateDayRows() {
+    const container = document.getElementById('shiftDaysContainer');
+    const weekVal = document.getElementById('weekSelect').value;
+    container.innerHTML = '';
+
+    if (!weekVal) return;
+
+    // 期間をパース（例：2026/04/01-15 or 2026/04/16-30）
+    const parts = weekVal.split('/');
+    const year = parseInt(parts[0]);
+    const month = parseInt(parts[1]) - 1;
+    const rangeParts = parts[2].split('-');
+    const startDay = parseInt(rangeParts[0]);
+    const endDay = parseInt(rangeParts[1]);
+
+    const rows = [];
+    const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+
+    for (let d = startDay; d <= endDay; d++) {
+      const date = new Date(year, month, d);
+      const dow = date.getDay();
+      if (dow === 0 || dow === 6) continue; // 土日スキップ
+
+      const dateStr = `${month + 1}/${d}(${dayNames[dow]})`;
+      const fieldName = `day_${String(month+1).padStart(2,'0')}${String(d).padStart(2,'0')}`;
+
+      rows.push(`
+        <div class="day-row" style="display:grid;grid-template-columns:100px 1fr 20px 1fr 1fr;align-items:center;gap:8px;margin-bottom:12px;">
+          <div style="font-size:13px;font-weight:700;color:var(--text2);">${dateStr}</div>
+          <div>
+            <select name="${fieldName}_type" onchange="toggleTime('${fieldName}', this.value)"
+              style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;padding:8px 10px;outline:none;-webkit-appearance:none;">
+              <option value="off">出勤不可</option>
+              <option value="on" selected>出勤可能</option>
+            </select>
+          </div>
+          <div id="${fieldName}_sep" style="text-align:center;color:var(--text2);font-size:13px;">〜</div>
+          <div id="${fieldName}_start_wrap">
+            <select name="${fieldName}_start"
+              style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;padding:8px 10px;outline:none;-webkit-appearance:none;">
+              ${timeOptions('09:00')}
+            </select>
+          </div>
+          <div id="${fieldName}_end_wrap">
+            <select name="${fieldName}_end"
+              style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;padding:8px 10px;outline:none;-webkit-appearance:none;">
+              ${timeOptions('18:00')}
+            </select>
+          </div>
+        </div>
+      `);
+    }
+
+    if (rows.length === 0) {
+      container.innerHTML = '<div style="color:var(--text2);font-size:13px;padding:12px 0;">この期間に平日はありません</div>';
+    } else {
+      container.innerHTML = rows.join('');
+    }
+  }
+
+  // 出勤不可のとき時間欄を非表示
+  function toggleTime(fieldName, val) {
+    const startWrap = document.getElementById(fieldName + '_start_wrap');
+    const endWrap   = document.getElementById(fieldName + '_end_wrap');
+    const sep       = document.getElementById(fieldName + '_sep');
+    if (val === 'off') {
+      startWrap.style.opacity = '0.3'; startWrap.style.pointerEvents = 'none';
+      endWrap.style.opacity = '0.3';   endWrap.style.pointerEvents = 'none';
+      sep.style.opacity = '0.3';
+    } else {
+      startWrap.style.opacity = '1'; startWrap.style.pointerEvents = 'auto';
+      endWrap.style.opacity = '1';   endWrap.style.pointerEvents = 'auto';
+      sep.style.opacity = '1';
+    }
+  }
+
+  // 対象期間変更時に日付を再生成
+  document.getElementById('weekSelect').addEventListener('change', generateDayRows);
+  generateDayRows();
+
+  // 今日の日付をデフォルト設定
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm   = String(today.getMonth()+1).padStart(2,'0');
+  const dd   = String(today.getDate()).padStart(2,'0');
+  document.querySelector('#card-attend input[name="date"]').value = `${yyyy}-${mm}-${dd}`;
+
+  // タブ切り替え
+  function switchTab(type) {
+    currentType = type;
+    document.querySelectorAll('.tab').forEach(t => t.className = 'tab');
+    document.querySelectorAll('.form-card').forEach(c => c.classList.remove('active'));
+    if (type === 'shift') {
+      document.querySelectorAll('.tab')[0].className = 'tab active-shift';
+      document.getElementById('card-shift').classList.add('active');
+    } else {
+      document.querySelectorAll('.tab')[1].className = 'tab active-attend';
+      document.getElementById('card-attend').classList.add('active');
+    }
+  }
+
+  // 実働時間計算
+  function calcJittsu() {
+    const as = document.getElementById('as').value;
+    const ae = document.getElementById('ae').value;
+    const ab = parseFloat(document.getElementById('ab').value) || 0;
+    if (!as || !ae) { document.getElementById('jittsuVal').textContent = '—'; return; }
+    const [sh,sm] = as.split(':').map(Number);
+    const [eh,em] = ae.split(':').map(Number);
+    const mins = (eh*60+em) - (sh*60+sm) - ab*60;
+    if (mins <= 0) { document.getElementById('jittsuVal').textContent = '—'; return; }
+    const h = Math.floor(mins/60);
+    const m = mins % 60;
+    document.getElementById('jittsuVal').textContent = m === 0 ? `${h}h` : `${h}h ${m}m`;
+  }
+
+  // シフト希望の送信
+  document.getElementById('shiftForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+
+    // 日付ごとのシフト希望を収集
+    const dayRows = document.querySelectorAll('.day-row');
+    const daySchedules = [];
+    const confirmRows = [];
+    dayRows.forEach(row => {
+      const selects = row.querySelectorAll('select');
+      if (selects.length < 3) return;
+      const typeVal  = selects[0].value;
+      const startVal = selects[1].value;
+      const endVal   = selects[2].value;
+      const dateLabel = row.querySelector('div').textContent.trim();
+      if (typeVal === 'off') {
+        daySchedules.push({ date: dateLabel, value: '出勤不可' });
+        confirmRows.push([dateLabel, '出勤不可']);
+      } else {
+        daySchedules.push({ date: dateLabel, value: `${startVal}〜${endVal}` });
+        confirmRows.push([dateLabel, `${startVal}〜${endVal}`]);
+      }
+    });
+
+    pendingData = {
+      type: 'shift',
+      name: fd.get('name'),
+      week: fd.get('week'),
+      days: daySchedules,
+      note: fd.get('note') || '',
+    };
+    const rows = [
+      ['名前',     pendingData.name],
+      ['対象期間', pendingData.week],
+      ...confirmRows,
+      ['備考',     pendingData.note || '—'],
+    ];
+    showConfirm('📅 シフト希望の確認', rows, 'btn-confirm-s');
+  });
+
+  // 勤怠記録の送信
+  document.getElementById('attendForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const jittsu = document.getElementById('jittsuVal').textContent;
+    pendingData = {
+      type:        'attendance',
+      name:        fd.get('name'),
+      date:        fd.get('date'),
+      actualStart: fd.get('actualStart'),
+      actualEnd:   fd.get('actualEnd'),
+      actualBreak: fd.get('actualBreak'),
+      note:        fd.get('note') || '',
+    };
+    const rows = [
+      ['名前',     pendingData.name],
+      ['日付',     pendingData.date],
+      ['出勤',     pendingData.actualStart],
+      ['退勤',     pendingData.actualEnd],
+      ['休憩',     pendingData.actualBreak + 'h'],
+      ['実働時間',  jittsu],
+      ['備考',     pendingData.note || '—'],
+    ];
+    showConfirm('⏱ 勤怠記録の確認', rows, 'btn-confirm-a');
+  });
+
+  function showConfirm(title, rows, btnClass) {
+    document.getElementById('confirmTitle').textContent = title;
+    document.getElementById('confirmContent').innerHTML = rows.map(([l,v]) =>
+      v === '' ? `<div style="padding:6px 0;font-size:11px;color:var(--text2);letter-spacing:1px;font-family:'DM Mono',monospace">${l}</div>` :
+      `<div class="confirm-row">
+        <span class="confirm-label">${l}</span>
+        <span class="confirm-value">${v}</span>
+      </div>`
+    ).join('');
+    const btn = document.getElementById('confirmBtn');
+    btn.className = btnClass;
+    btn.textContent = 'この内容で送信';
+    document.getElementById('overlay').classList.add('show');
+  }
+
+  function closeConfirm() {
+    document.getElementById('overlay').classList.remove('show');
+  }
+
+  async function doSubmit() {
+    const btn = document.getElementById('confirmBtn');
+    btn.disabled = true;
+    btn.textContent = '送信中...';
+    closeConfirm();
+
+    try {
+      await fetch(GAS_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pendingData),
+      });
+
+      if (pendingData.type === 'shift') {
+        document.getElementById('shiftForm').style.display = 'none';
+        document.getElementById('shift-success').classList.add('show');
+        showToast('✅ シフト希望を送信しました！', 'success');
+      } else {
+        document.getElementById('attendForm').style.display = 'none';
+        document.getElementById('attend-success').classList.add('show');
+        showToast('✅ 勤怠を記録しました！', 'success');
+      }
+    } catch (err) {
+      showToast('⚠️ 送信に失敗しました', 'error');
+    }
+    btn.disabled = false;
+  }
+
+  function resetShift() {
+    document.getElementById('shiftForm').reset();
+    document.getElementById('shiftForm').style.display = 'block';
+    document.getElementById('shift-success').classList.remove('show');
+  }
+
+  function resetAttend() {
+    document.getElementById('attendForm').reset();
+    document.getElementById('attendForm').style.display = 'block';
+    document.getElementById('attend-success').classList.remove('show');
+    document.querySelector('#card-attend input[name="date"]').value = `${yyyy}-${mm}-${dd}`;
+    document.getElementById('jittsuVal').textContent = '—';
+  }
+
+  function showToast(msg, type) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = `toast ${type} show`;
+    setTimeout(() => t.classList.remove('show'), 3500);
+  }
+</script>
+</body>
+</html>
