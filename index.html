@@ -370,13 +370,9 @@
     <div class="row2">
       <div class="field">
         <label>名前 <span class="req">*</span></label>
-        <select name="name" required>
+        <select name="name" required class="member-select">
           <option value="">選択</option>
-          <option>福島大智</option>
-          <option>野田希</option>
-          <option>堀田聖奈</option>
-          <option>福田翔瑛</option>
-          <option>西脇優</option>
+          <!-- 現役メンバーは GAS マスタから動的注入 -->
         </select>
       </div>
       <div class="field">
@@ -421,13 +417,9 @@
     <div class="row2">
       <div class="field attend">
         <label>名前 <span class="req g">*</span></label>
-        <select name="name" required>
+        <select name="name" required class="member-select">
           <option value="">選択</option>
-          <option>福島大智</option>
-          <option>野田希</option>
-          <option>堀田聖奈</option>
-          <option>福田翔瑛</option>
-          <option>西脇優</option>
+          <!-- 現役メンバーは GAS マスタから動的注入 -->
         </select>
       </div>
       <div class="field attend">
@@ -509,6 +501,38 @@
 
   let currentType = 'shift';
   let pendingData = null;
+
+  // ========================================
+  // メンバー一覧をマスタから動的取得してドロップダウンに注入
+  // （シフト管理スプシ「メンバー設定」シート参照・退職者は除外）
+  // ========================================
+  async function loadMembers() {
+    try {
+      const res  = await fetch(GAS_URL + '?action=members');
+      const data = await res.json();
+      const names = (data.members || []).map(m => m.name);
+      if (names.length === 0) {
+        console.warn('メンバー一覧が空です。マスタを確認してください。');
+        return;
+      }
+      document.querySelectorAll('select.member-select').forEach(sel => {
+        // 「選択」プレースホルダ以降を全て削除して再注入
+        const placeholder = sel.querySelector('option[value=""]');
+        sel.innerHTML = '';
+        if (placeholder) sel.appendChild(placeholder);
+        names.forEach(n => {
+          const opt = document.createElement('option');
+          opt.value = n;
+          opt.textContent = n;
+          sel.appendChild(opt);
+        });
+      });
+    } catch (e) {
+      console.error('メンバー取得失敗:', e);
+      // フォールバック: 名前を手入力できるよう input に切り替えるなどは将来対応
+      alert('メンバー一覧の取得に失敗しました。ページを再読み込みするか管理者に連絡してください。');
+    }
+  }
 
   // 対象期間の選択肢を自動生成＋提出期限を表示
   // ルール：
@@ -602,6 +626,7 @@
   }
 
   generatePeriodOptions();
+  loadMembers(); // ← マスタから現役メンバーを動的取得
 
   // 時間の選択肢を生成（9:00〜18:00、30分刻み）
   function timeOptions(selectedVal) {
