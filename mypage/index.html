@@ -16,7 +16,12 @@
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", sans-serif; font-size: 15px; line-height: 1.6; }
   header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 8px; position: sticky; top: 0; z-index: 5; }
-  header h1 { font-size: 16px; margin: 0; }
+  header h1 { font-size: 16px; margin: 0; white-space: nowrap; flex: 0 0 auto; }
+  #who { display: inline-block; max-width: 42vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; }
+  header { flex-wrap: wrap; }
+  header > .row { flex: 0 1 auto; min-width: 0; flex-wrap: nowrap; margin-left: auto; }
+  header > .row > * { flex: 0 1 auto; }
+  #who { max-width: calc(100vw - 150px); }
   main { max-width: 720px; margin: 0 auto; padding: 16px; }
   .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 14px; }
   .card h2 { font-size: 15px; margin: 0 0 10px; }
@@ -32,7 +37,7 @@
   nav.tabs a { flex: 1 0 auto; text-align: center; padding: 9px 12px; border-radius: 8px; background: var(--chip); color: var(--text); text-decoration: none; font-size: 14px; }
   nav.tabs a[aria-current="page"] { background: var(--accent); color: var(--accent-text); }
   .muted { color: var(--text2); font-size: 13px; }
-  .chip { display: inline-block; padding: 1px 8px; border-radius: 999px; background: var(--chip); font-size: 12px; }
+  .chip { display: inline-block; white-space: nowrap; padding: 1px 8px; border-radius: 999px; background: var(--chip); font-size: 12px; }
   .chip.ok { color: var(--ok); } .chip.warn { color: var(--warn); } .chip.ng { color: var(--ng); }
   table { width: 100%; border-collapse: collapse; font-size: 14px; }
   th, td { text-align: left; padding: 7px 6px; border-bottom: 1px solid var(--border); vertical-align: top; }
@@ -299,14 +304,14 @@ function render() {
   renderPeriods(h);
   var ms = $('myShifts'); clear(ms);
   h.shifts.slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; }).forEach(function (s) {
-    var tr = el('tr'); tr.appendChild(el('td', s.date)); tr.appendChild(el('td', s.kind === 'OFF' ? '休み' : s.kind === 'PAID_LEAVE' ? '有給' : '出勤'));
+    var tr = el('tr'); tr.appendChild(el('td', s.date.slice(5).replace('-', '/'))); tr.appendChild(el('td', s.kind === 'OFF' ? '休み' : s.kind === 'PAID_LEAVE' ? '有給' : '出勤'));
     tr.appendChild(el('td', s.start ? s.start + '〜' + s.end : '')); tr.appendChild(el('td', s.stage === 'CONFIRMED' ? '確定' : '希望')); ms.appendChild(tr);
   });
   if (!h.shifts.length) { var tr0 = el('tr'); var td0 = el('td', 'まだありません', 'muted'); td0.colSpan = 4; tr0.appendChild(td0); ms.appendChild(tr0); }
   // 勤怠
   var ma = $('myAttend'); clear(ma);
   h.attendance.slice().reverse().forEach(function (d) {
-    var tr = el('tr'); tr.appendChild(el('td', d.date));
+    var tr = el('tr'); tr.appendChild(el('td', d.date.slice(5).replace('-', '/')));
     var lb = LABELS[d.label] || [d.label, '']; var td = el('td'); td.appendChild(el('span', lb[0], 'chip ' + lb[1]));
     if (d.late) td.appendChild(el('span', ' 遅刻候補', 'chip warn'));
     tr.appendChild(td);
