@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="no-referrer">
+<title>ネクスゲート マイページ</title>
+<style>
+  :root {
+    --bg: #f4f6f9; --surface: #ffffff; --border: #dde2ea; --text: #1d2433; --text2: #5d6678;
+    --accent: #1f5fbf; --accent-text: #ffffff; --ok: #1e7d4f; --warn: #a15c00; --ng: #b3261e; --chip: #eef2f8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #12151b; --surface: #1b2029; --border: #2e3542; --text: #e6e9ef; --text2: #a3abba; --accent: #6ea2f2; --accent-text: #0c1320; --ok: #5cc28f; --warn: #e0a54a; --ng: #f08a80; --chip: #252c38; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", sans-serif; font-size: 15px; line-height: 1.6; }
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 8px; position: sticky; top: 0; z-index: 5; }
+  header h1 { font-size: 16px; margin: 0; }
+  main { max-width: 720px; margin: 0 auto; padding: 16px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+  .card h2 { font-size: 15px; margin: 0 0 10px; }
+  label { display: block; font-size: 13px; color: var(--text2); margin: 10px 0 4px; }
+  input, select { width: 100%; font-size: 16px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); }
+  button { font-size: 15px; padding: 11px 16px; border-radius: 8px; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-text); cursor: pointer; min-height: 44px; }
+  button.secondary { background: transparent; color: var(--accent); }
+  button.danger { background: var(--ng); border-color: var(--ng); color: #fff; }
+  button:disabled { opacity: .5; cursor: progress; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .row > * { flex: 1 1 auto; }
+  nav.tabs { display: flex; gap: 4px; overflow-x: auto; margin-bottom: 14px; }
+  nav.tabs a { flex: 1 0 auto; text-align: center; padding: 9px 12px; border-radius: 8px; background: var(--chip); color: var(--text); text-decoration: none; font-size: 14px; }
+  nav.tabs a[aria-current="page"] { background: var(--accent); color: var(--accent-text); }
+  .muted { color: var(--text2); font-size: 13px; }
+  .chip { display: inline-block; padding: 1px 8px; border-radius: 999px; background: var(--chip); font-size: 12px; }
+  .chip.ok { color: var(--ok); } .chip.warn { color: var(--warn); } .chip.ng { color: var(--ng); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 7px 6px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--text2); font-weight: 600; font-size: 12px; }
+  .ops { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+  .op { border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
+  .op.busy { opacity: .6; } .op.mine { border-color: var(--ok); }
+  .day { display: grid; grid-template-columns: 92px 1fr; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); }
+  .day .times { display: flex; gap: 6px; align-items: center; }
+  .day .times select { padding: 6px; font-size: 15px; }
+  #toast { position: fixed; left: 16px; right: 16px; bottom: 16px; max-width: 560px; margin: 0 auto; padding: 12px 14px; border-radius: 10px; background: var(--text); color: var(--bg); display: none; z-index: 20; }
+  #toast.ng { background: var(--ng); color: #fff; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<header>
+  <h1>ネクスゲート マイページ</h1>
+  <div class="row" style="flex:0 0 auto">
+    <span id="who" class="muted"></span>
+    <button id="logoutBtn" class="secondary hidden" type="button">ログアウト</button>
+  </div>
+</header>
+<main>
+  <!-- 認証 -->
+  <section id="authView" class="card hidden">
+    <h2 id="authTitle">ログイン</h2>
+    <p id="authLead" class="muted">登録済みのメールアドレスに認証コードを送ります。</p>
+    <form id="emailForm">
+      <label for="email">メールアドレス</label>
+      <input id="email" type="email" autocomplete="email" required maxlength="200">
+      <div style="margin-top:12px"><button type="submit">認証コードを送る</button></div>
+    </form>
+    <form id="codeForm" class="hidden">
+      <label for="code">認証コード（6桁・10分有効）</label>
+      <input id="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required>
+      <div class="row" style="margin-top:12px"><button type="submit">確認する</button><button type="button" id="backToEmail" class="secondary">メールアドレスを変更</button></div>
+    </form>
+  </section>
+
+  <!-- 本体 -->
+  <section id="appView" class="hidden">
+    <nav class="tabs" aria-label="メニュー">
+      <a href="#call" data-tab="call">架電</a>
+      <a href="#shift" data-tab="shift">シフト</a>
+      <a href="#attend" data-tab="attend">勤怠</a>
+      <a href="#stats" data-tab="stats">実績</a>
+    </nav>
+
+    <div data-panel="call">
+      <div class="card">
+        <h2>架電セッション</h2>
+        <p id="sessionNow" class="muted"></p>
+        <label for="projectSel">案件</label>
+        <select id="projectSel"></select>
+        <label>枠（オペレーター）</label>
+        <div id="opGrid" class="ops"></div>
+        <div class="row" style="margin-top:12px">
+          <button id="switchBtn" type="button" class="secondary hidden">この案件に切り替える</button>
+          <button id="endBtn" type="button" class="danger hidden">架電を終了</button>
+        </div>
+        <p class="muted">開始・終了の時刻はサーバーの時刻で記録されます。画面を閉じても15分で自動終了します（要確認として記録）。</p>
+      </div>
+    </div>
+
+    <div data-panel="shift" class="hidden">
+      <div class="card">
+        <h2>シフト希望の提出</h2>
+        <label for="periodSel">対象期間</label>
+        <select id="periodSel"></select>
+        <p id="deadlineNote" class="muted"></p>
+        <div id="dayRows"></div>
+        <div style="margin-top:12px"><button id="shiftSubmit" type="button">提出する</button></div>
+      </div>
+      <div class="card">
+        <h2>自分のシフト</h2>
+        <table><thead><tr><th>日付</th><th>区分</th><th>時間</th><th>状態</th></tr></thead><tbody id="myShifts"></tbody></table>
+      </div>
+    </div>
+
+    <div data-panel="attend" class="hidden">
+      <div class="card">
+        <h2>打刻</h2>
+        <div class="row"><button id="punchIn" type="button">出勤</button><button id="punchOut" type="button" class="secondary">退勤</button></div>
+        <label for="breakMin">休憩（分・退勤時に記録）</label>
+        <input id="breakMin" type="number" min="0" max="600" step="5" value="60">
+      </div>
+      <div class="card">
+        <h2>直近2週間</h2>
+        <table><thead><tr><th>日付</th><th>状態</th><th>打刻</th><th>実働</th></tr></thead><tbody id="myAttend"></tbody></table>
+        <p class="muted">「打刻漏れ」は欠勤ではありません。管理者が確認します。必要なら下から修正申請してください。</p>
+      </div>
+      <div class="card">
+        <h2>修正申請</h2>
+        <div class="row">
+          <div><label for="corDate">日付</label><input id="corDate" type="date"></div>
+          <div><label for="corIn">出勤</label><input id="corIn" type="time"></div>
+          <div><label for="corOut">退勤</label><input id="corOut" type="time"></div>
+          <div><label for="corBreak">休憩(分)</label><input id="corBreak" type="number" min="0" max="600" value="60"></div>
+        </div>
+        <label for="corNote">理由</label><input id="corNote" maxlength="500">
+        <div style="margin-top:12px"><button id="corSubmit" type="button">申請する</button></div>
+      </div>
+    </div>
+
+    <div data-panel="stats" class="hidden">
+      <div class="card">
+        <h2>今月の実績</h2>
+        <table><thead><tr><th>案件</th><th>架電</th><th>接続</th><th>アポ</th><th>架電h</th></tr></thead><tbody id="myStats"></tbody></table>
+        <p class="muted">枠と時刻で本人に確定できた通話だけを数えています（未確定の通話は管理者が確認中）。</p>
+      </div>
+    </div>
+  </section>
+</main>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+// API の URL は公開して問題ない（全操作が本人認証付き）。秘密情報はこのファイルに置かない
+var API_URL = 'https://script.google.com/macros/s/AKfycbx7HZ57SnqRlceimBNsHFUliJpoVN2WgxxJwIqAfIjXenR_gJ-kTMR2X1CCK9EbErsQRg/exec';
+var TOKEN_KEY = 'ism_token';
+var state = { token: null, home: null, invite: null, email: '', busy: false, hbTimer: null };
+
+function store(k, v) { try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
+function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function $(id) { return document.getElementById(id); }
+function el(tag, text, cls) { var e = document.createElement(tag); if (text !== undefined && text !== null) e.textContent = String(text); if (cls) e.className = cls; return e; }
+function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); }
+function uuid() { return (crypto.randomUUID ? crypto.randomUUID() : Array.from(crypto.getRandomValues(new Uint8Array(16)), function (b) { return ('0' + b.toString(16)).slice(-2); }).join('')); }
+
+function toast(msg, ng) {
+  var t = $('toast'); t.textContent = msg; t.className = ng ? 'ng' : ''; t.style.display = 'block';
+  clearTimeout(toast._t); toast._t = setTimeout(function () { t.style.display = 'none'; }, ng ? 6000 : 3000);
+}
+
+// 応答 JSON の ok と request_id を確認できたときだけ成功扱い。通信失敗は同じ request_id で最大2回再送
+async function api(action, params, opt) {
+  opt = opt || {};
+  var body = Object.assign({}, params || {}, { action: action, request_id: opt.requestId || uuid() });
+  if (state.token) body.token = state.token;
+  var lastErr;
+  for (var attempt = 0; attempt < 3; attempt++) {
+    try {
+      var res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body), redirect: 'follow', cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      var json = await res.json();
+      if (json.request_id !== body.request_id) throw new Error('応答の照合に失敗しました');
+      if (!json.ok) {
+        var code = json.error && json.error.code;
+        if (code === 'UNAUTHENTICATED' || code === 'MEMBER_INACTIVE') { logout(true); }
+        var e = new Error((json.error && json.error.message) || 'エラー'); e.code = code; e.server = true; throw e;
+      }
+      return json.data;
+    } catch (err) {
+      lastErr = err;
+      if (err.server || err.code === 'BUSY') break;
+      await new Promise(function (r) { setTimeout(r, 800 * (attempt + 1)); });
+    }
+  }
+  throw lastErr;
+}
+
+// 二重クリック防止: 実行中はボタンを無効化
+async function guarded(btn, fn) {
+  if (state.busy) return;
+  state.busy = true; if (btn) btn.disabled = true;
+  try { await fn(); } catch (e) { toast(e.message || '通信に失敗しました。保存されていない可能性があります', true); }
+  finally { state.busy = false; if (btn) btn.disabled = false; }
+}
+
+// ---------- 認証 ----------
+function showAuth() {
+  $('appView').classList.add('hidden'); $('authView').classList.remove('hidden'); $('logoutBtn').classList.add('hidden'); $('who').textContent = '';
+  if (state.invite) { $('authTitle').textContent = 'マイページ登録'; $('authLead').textContent = '招待メールを受け取ったメールアドレスを入力してください。'; }
+}
+
+$('emailForm').addEventListener('submit', function (ev) {
+  ev.preventDefault();
+  var btn = ev.submitter;
+  guarded(btn, async function () {
+    state.email = $('email').value.trim();
+    if (state.invite) await api('auth.redeemInvite', { invite_token: state.invite, email: state.email });
+    else await api('auth.requestLogin', { email: state.email });
+    $('emailForm').classList.add('hidden'); $('codeForm').classList.remove('hidden'); $('code').focus();
+    toast('認証コードを送りました（届かない場合は迷惑メールもご確認ください）');
+  });
+});
+$('backToEmail').addEventListener('click', function () { $('codeForm').classList.add('hidden'); $('emailForm').classList.remove('hidden'); });
+$('codeForm').addEventListener('submit', function (ev) {
+  ev.preventDefault();
+  guarded(ev.submitter, async function () {
+    var r = await api('auth.verifyOtp', { email: state.email, code: $('code').value.trim(), purpose: state.invite ? 'REGISTER' : 'LOGIN', invite_token: state.invite || undefined });
+    if (!r.active) { toast(r.registered ? '登録が完了しました。勤務開始日からご利用いただけます' : 'このアカウントは現在利用できません'); state.invite = null; return; }
+    state.token = r.token; store(TOKEN_KEY, r.token); state.invite = null;
+    $('code').value = '';
+    await refresh(); showApp();
+    toast(r.registered ? '登録が完了しました' : 'ログインしました');
+  });
+});
+
+function logout(silent) {
+  var t = state.token;
+  state.token = null; store(TOKEN_KEY, null); stopHeartbeat();
+  if (t && !silent) { fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'auth.logout', token: t, request_id: uuid() }) }).catch(function () {}); }
+  $('codeForm').classList.add('hidden'); $('emailForm').classList.remove('hidden');
+  showAuth();
+  if (silent) toast('ログインの有効期限が切れました。もう一度ログインしてください', true);
+}
+$('logoutBtn').addEventListener('click', function () { logout(false); });
+
+// ---------- 画面 ----------
+function showApp() {
+  $('authView').classList.add('hidden'); $('appView').classList.remove('hidden'); $('logoutBtn').classList.remove('hidden');
+  route();
+}
+
+function route() {
+  var tab = (location.hash || '#call').slice(1);
+  if (['call', 'shift', 'attend', 'stats'].indexOf(tab) < 0) tab = 'call';
+  document.querySelectorAll('[data-panel]').forEach(function (p) { p.classList.toggle('hidden', p.getAttribute('data-panel') !== tab); });
+  document.querySelectorAll('nav.tabs a').forEach(function (a) { if (a.getAttribute('data-tab') === tab) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+}
+window.addEventListener('hashchange', route); // 戻る操作はタブ移動のみ（データ送信しない）
+
+async function refresh() {
+  state.home = await api('me.home', {});
+  render();
+}
+
+var LABELS = { WORKED: ['出勤', 'ok'], MISSING_PUNCH: ['打刻漏れ（確認中）', 'warn'], ABSENT: ['欠勤', 'ng'], PAID_LEAVE: ['有給', 'ok'], REQUESTED_OFF: ['希望休', ''], NOT_SUBMITTED: ['未提出', 'warn'], NO_SHIFT: ['シフトなし', ''] };
+
+function render() {
+  var h = state.home; if (!h) return;
+  $('who').textContent = h.me.display_name + ' さん';
+  // 架電
+  var projSel = $('projectSel'); var keep = projSel.value; clear(projSel);
+  h.projects.forEach(function (p) { var o = el('option', p.project_name); o.value = p.project_id; projSel.appendChild(o); });
+  if (h.session) projSel.value = h.session.project_id; else if (keep) projSel.value = keep;
+  var cur = h.session;
+  var pname = function (id) { var p = h.projects.filter(function (x) { return x.project_id === id; })[0]; return p ? p.project_name : id; };
+  $('sessionNow').textContent = cur ? ('架電中: ' + labelOf(cur.operator_id) + ' / ' + pname(cur.project_id) + '（' + jstTime(cur.start_at) + '〜）') : '架電していません。案件を選び、空いている枠を押して開始します。';
+  var grid = $('opGrid'); clear(grid);
+  h.operators.forEach(function (o) {
+    var box = el('div', null, 'op' + (o.mine ? ' mine' : o.busy ? ' busy' : ''));
+    box.appendChild(el('div', o.label));
+    box.appendChild(el('div', o.mine ? '自分が使用中' : o.busy ? '使用中' : '空き', 'muted'));
+    if (!cur && !o.busy) {
+      var b = el('button', 'ここで開始'); b.type = 'button';
+      b.addEventListener('click', function () { startSession(b, o.operator_id, false); });
+      box.appendChild(b);
+    } else if (!cur && o.busy) {
+      var t = el('button', '引き継いで開始', 'secondary'); t.type = 'button';
+      t.addEventListener('click', function () {
+        if (confirm('前の利用者が終了していない可能性があります。前のセッションを終了して引き継ぎますか？（管理者に記録されます）')) startSession(t, o.operator_id, true);
+      });
+      box.appendChild(t);
+    }
+    grid.appendChild(box);
+  });
+  $('endBtn').classList.toggle('hidden', !cur);
+  $('switchBtn').classList.toggle('hidden', !cur);
+  if (cur) startHeartbeat(); else stopHeartbeat();
+  // シフト
+  renderPeriods(h);
+  var ms = $('myShifts'); clear(ms);
+  h.shifts.slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; }).forEach(function (s) {
+    var tr = el('tr'); tr.appendChild(el('td', s.date)); tr.appendChild(el('td', s.kind === 'OFF' ? '休み' : s.kind === 'PAID_LEAVE' ? '有給' : '出勤'));
+    tr.appendChild(el('td', s.start ? s.start + '〜' + s.end : '')); tr.appendChild(el('td', s.stage === 'CONFIRMED' ? '確定' : '希望')); ms.appendChild(tr);
+  });
+  if (!h.shifts.length) { var tr0 = el('tr'); var td0 = el('td', 'まだありません', 'muted'); td0.colSpan = 4; tr0.appendChild(td0); ms.appendChild(tr0); }
+  // 勤怠
+  var ma = $('myAttend'); clear(ma);
+  h.attendance.slice().reverse().forEach(function (d) {
+    var tr = el('tr'); tr.appendChild(el('td', d.date));
+    var lb = LABELS[d.label] || [d.label, '']; var td = el('td'); td.appendChild(el('span', lb[0], 'chip ' + lb[1]));
+    if (d.late) td.appendChild(el('span', ' 遅刻候補', 'chip warn'));
+    tr.appendChild(td);
+    tr.appendChild(el('td', d.records.map(function (r) { return (r.clock_in || '--') + '〜' + (r.clock_out || '--') + (r.status === 'PENDING_APPROVAL' ? '（申請中）' : ''); }).join(' / ')));
+    tr.appendChild(el('td', d.hours ? d.hours + 'h' : '')); ma.appendChild(tr);
+  });
+  // 実績
+  var st = $('myStats'); clear(st);
+  h.stats_month.forEach(function (r) {
+    var tr = el('tr'); [r.project_name, r.calls, r.connected, r.appts_acquired, r.session_hours].forEach(function (v) { tr.appendChild(el('td', v)); }); st.appendChild(tr);
+  });
+  if (!h.stats_month.length) { var tr1 = el('tr'); var td1 = el('td', '今月の確定した実績はまだありません', 'muted'); td1.colSpan = 5; tr1.appendChild(td1); st.appendChild(tr1); }
+}
+
+function labelOf(opId) { var o = (state.home.operators || []).filter(function (x) { return x.operator_id === opId; })[0]; return o ? o.label : opId; }
+function jstTime(iso) { return new Date(iso).toLocaleTimeString('ja-JP', { timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit' }); }
+
+function startSession(btn, opId, takeover) {
+  guarded(btn, async function () {
+    await api('session.start', { operator_id: opId, project_id: $('projectSel').value, takeover: takeover });
+    await refresh(); toast('架電を開始しました');
+  });
+}
+$('switchBtn').addEventListener('click', function (ev) {
+  guarded(ev.currentTarget, async function () {
+    var r = await api('session.switch', { project_id: $('projectSel').value });
+    await refresh(); toast(r.idempotent ? 'すでにこの案件です' : '案件を切り替えました');
+  });
+});
+$('endBtn').addEventListener('click', function (ev) {
+  guarded(ev.currentTarget, async function () { await api('session.end', {}); await refresh(); toast('架電を終了しました'); });
+});
+
+function startHeartbeat() {
+  if (state.hbTimer) return;
+  state.hbTimer = setInterval(sendHeartbeat, 60000);
+}
+function stopHeartbeat() { if (state.hbTimer) { clearInterval(state.hbTimer); state.hbTimer = null; } }
+async function sendHeartbeat() {
+  try { await api('session.heartbeat', {}); }
+  catch (e) { if (e.code === 'NO_OPEN_SESSION') { stopHeartbeat(); toast('セッションが自動終了していました。必要なら開始し直してください', true); refresh().catch(function () {}); } }
+}
+document.addEventListener('visibilitychange', function () { if (!document.hidden && state.token) { if (state.hbTimer) sendHeartbeat(); refresh().catch(function () {}); } });
+
+// シフト入力
+function periodLabel(k) { var m = +k.slice(5, 7); return k.slice(0, 4) + '年' + m + '月' + (k.slice(-1) === 'A' ? '前半（1〜15日）' : '後半（16日〜末日）'); }
+function datesOf(k) {
+  var y = +k.slice(0, 4), m = +k.slice(5, 7), a = k.slice(-1) === 'A';
+  var last = new Date(Date.UTC(y, m, 0)).getUTCDate(); var out = [];
+  for (var d = a ? 1 : 16; d <= (a ? 15 : last); d++) out.push(k.slice(0, 7) + '-' + ('0' + d).slice(-2));
+  return out;
+}
+function renderPeriods(h) {
+  var sel = $('periodSel'); if (sel.options.length) return;
+  [h.periods.next, h.periods.current].forEach(function (k) { var o = el('option', periodLabel(k)); o.value = k; sel.appendChild(o); });
+  sel.addEventListener('change', renderDayRows); renderDayRows();
+}
+function timeSelect(val) {
+  var s = el('select');
+  for (var t = 8 * 60; t <= 21 * 60; t += 30) { var v = ('0' + Math.floor(t / 60)).slice(-2) + ':' + ('0' + t % 60).slice(-2); var o = el('option', v); o.value = v; if (v === val) o.selected = true; s.appendChild(o); }
+  return s;
+}
+function renderDayRows() {
+  var k = $('periodSel').value; var box = $('dayRows'); clear(box);
+  var dl = k === state.home.periods.next ? state.home.periods.next_deadline : null;
+  $('deadlineNote').textContent = dl ? ('提出期限: ' + new Date(dl).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit' }) + '（期限前なら何度でも修正できます）') : '';
+  var mine = {}; state.home.shifts.forEach(function (s) { if (s.stage === 'REQUEST' && s.period_key === k) mine[s.date] = s; });
+  datesOf(k).forEach(function (d) {
+    var dow = new Date(d + 'T00:00:00Z').getUTCDay(); if (dow === 0 || dow === 6) return;
+    var row = el('div', null, 'day'); row.dataset.date = d;
+    row.appendChild(el('div', d.slice(5).replace('-', '/') + '（' + '日月火水木金土'[dow] + '）'));
+    var times = el('div', null, 'times');
+    var kind = el('select'); [['', '—'], ['WORK', '出勤可'], ['OFF', '希望休']].forEach(function (p) { var o = el('option', p[1]); o.value = p[0]; kind.appendChild(o); });
+    var ex = mine[d]; if (ex) kind.value = ex.kind;
+    var st = timeSelect(ex && ex.start || '10:00'), en = timeSelect(ex && ex.end || '17:00');
+    var sync = function () { st.disabled = en.disabled = kind.value !== 'WORK'; }; kind.addEventListener('change', sync); sync();
+    times.appendChild(kind); times.appendChild(st); times.appendChild(el('span', '〜')); times.appendChild(en);
+    row.appendChild(times); box.appendChild(row);
+  });
+}
+$('shiftSubmit').addEventListener('click', function (ev) {
+  var k = $('periodSel').value; var days = [];
+  document.querySelectorAll('#dayRows .day').forEach(function (r) {
+    var s = r.querySelectorAll('select'); var kind = s[0].value; if (!kind) return;
+    days.push(kind === 'WORK' ? { date: r.dataset.date, kind: kind, start: s[1].value, end: s[2].value } : { date: r.dataset.date, kind: kind });
+  });
+  if (!confirm(periodLabel(k) + ' を ' + days.length + ' 日分で提出します。よろしいですか？')) return;
+  guarded(ev.currentTarget, async function () {
+    var r = await api('shift.submit', { period_key: k, days: days });
+    await refresh(); toast('提出しました（' + r.version + '版・保存を確認済み）');
+  });
+});
+
+// 勤怠
+$('punchIn').addEventListener('click', function (ev) { guarded(ev.currentTarget, async function () { var r = await api('attendance.punch', { kind: 'in' }); await refresh(); toast(r.idempotent ? '本日はすでに出勤済みです' : '出勤を記録しました（' + r.attendance.clock_in + '）'); }); });
+$('punchOut').addEventListener('click', function (ev) { guarded(ev.currentTarget, async function () { var r = await api('attendance.punch', { kind: 'out', break_minutes: $('breakMin').value }); await refresh(); toast('退勤を記録しました（' + r.attendance.clock_out + '）'); }); });
+$('corSubmit').addEventListener('click', function (ev) {
+  guarded(ev.currentTarget, async function () {
+    await api('attendance.correct', { date: $('corDate').value, clock_in: $('corIn').value, clock_out: $('corOut').value, break_minutes: $('corBreak').value, note: $('corNote').value });
+    await refresh(); toast('修正申請を送りました（管理者の承認後に反映されます）');
+  });
+});
+
+// ---------- 起動 ----------
+(function init() {
+  var params = new URLSearchParams(location.search);
+  if (params.get('invite')) {
+    state.invite = params.get('invite');
+    history.replaceState(null, '', location.pathname + location.hash); // トークンを URL・履歴に残さない
+    store(TOKEN_KEY, null);
+  }
+  state.token = state.invite ? null : load(TOKEN_KEY);
+  if (!state.token) { showAuth(); return; }
+  refresh().then(showApp).catch(function () { if (!state.token) return; showAuth(); });
+})();
+</script>
+</body>
+</html>
