@@ -8,10 +8,10 @@
 <style>
   :root {
     --bg: #f4f6f9; --surface: #ffffff; --border: #dde2ea; --text: #1d2433; --text2: #5d6678;
-    --accent: #1f5fbf; --accent-text: #ffffff; --ok: #1e7d4f; --warn: #a15c00; --ng: #b3261e; --chip: #eef2f8;
+    --accent: #1f5fbf; --accent-text: #ffffff; --ok: #1e7d4f; --warn: #a15c00; --ng: #b3261e; --chip: #eef2f8; --sat: #1f5fbf;
   }
   @media (prefers-color-scheme: dark) {
-    :root { --bg: #12151b; --surface: #1b2029; --border: #2e3542; --text: #e6e9ef; --text2: #a3abba; --accent: #6ea2f2; --accent-text: #0c1320; --ok: #5cc28f; --warn: #e0a54a; --ng: #f08a80; --chip: #252c38; }
+    :root { --bg: #12151b; --surface: #1b2029; --border: #2e3542; --text: #e6e9ef; --text2: #a3abba; --accent: #6ea2f2; --accent-text: #0c1320; --ok: #5cc28f; --warn: #e0a54a; --ng: #f08a80; --chip: #252c38; --sat: #8ab4f8; }
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", sans-serif; font-size: 15px; line-height: 1.6; }
@@ -47,6 +47,10 @@
   .op.busy { opacity: .6; } .op.mine { border-color: var(--ok); }
   .day { display: grid; grid-template-columns: 92px 1fr; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); }
   .day .times { display: flex; gap: 6px; align-items: center; }
+  .d-sat { color: var(--sat); } .d-sun, .d-hol { color: var(--ng); }
+  .day.day-mark { background: var(--chip); border-radius: 6px; padding-left: 6px; }
+  .hol-name { display: block; font-size: 11px; line-height: 1.2; }
+  td.plan { white-space: nowrap; }
   .day .times select { padding: 6px; font-size: 15px; }
   #toast { position: fixed; left: 16px; right: 16px; bottom: 16px; max-width: 560px; margin: 0 auto; padding: 12px 14px; border-radius: 10px; background: var(--text); color: var(--bg); display: none; z-index: 20; }
   #toast.ng { background: var(--ng); color: #fff; }
@@ -110,11 +114,13 @@
         <select id="periodSel"></select>
         <p id="deadlineNote" class="muted"></p>
         <div id="dayRows"></div>
+        <label for="shiftNote">備考（任意）</label>
+        <input id="shiftNote" maxlength="500" placeholder="例: 水曜は14時以降なら可">
         <div style="margin-top:12px"><button id="shiftSubmit" type="button">提出する</button></div>
       </div>
       <div class="card">
         <h2>自分のシフト</h2>
-        <table><thead><tr><th>日付</th><th>区分</th><th>時間</th><th>状態</th></tr></thead><tbody id="myShifts"></tbody></table>
+        <table><thead><tr><th>日付</th><th>希望</th><th>確定</th></tr></thead><tbody id="myShifts"></tbody></table>
       </div>
     </div>
 
@@ -131,7 +137,12 @@
         <p class="muted">「打刻漏れ」は欠勤ではありません。管理者が確認します。必要なら下から修正申請してください。</p>
       </div>
       <div class="card">
+        <h2>証明書類の提出</h2>
+        <p class="muted">通勤経路・本人確認などの証明書類は <a href="https://docs.google.com/forms/d/e/1FAIpQLScCAvJ6oAkZ5fQs2VY2jYFlF-i7k1C3_JjCIGAh74B9PHu3mg/viewform" target="_blank" rel="noopener noreferrer">こちらのフォーム</a> から提出してください。</p>
+      </div>
+      <div class="card">
         <h2>修正申請</h2>
+        <p class="muted">打刻を忘れた・間違えたときに使います。管理者が承認すると勤務実績に反映されます。</p>
         <div class="row">
           <div><label for="corDate">日付</label><input id="corDate" type="date"></div>
           <div><label for="corIn">出勤</label><input id="corIn" type="time"></div>
@@ -145,6 +156,8 @@
 
     <div data-panel="stats" class="hidden">
       <div class="card">
+        <h2>今月の勤務</h2>
+        <p id="workMonth" class="muted"></p>
         <h2>今月の実績</h2>
         <table><thead><tr><th>案件</th><th>架電</th><th>接続</th><th>アポ</th><th>架電h</th></tr></thead><tbody id="myStats"></tbody></table>
         <p class="muted">枠と時刻で本人に確定できた通話だけを数えています（未確定の通話は管理者が確認中）。</p>
@@ -303,15 +316,23 @@ function render() {
   // シフト
   renderPeriods(h);
   var ms = $('myShifts'); clear(ms);
-  h.shifts.slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; }).forEach(function (s) {
-    var tr = el('tr'); tr.appendChild(el('td', s.date.slice(5).replace('-', '/'))); tr.appendChild(el('td', s.kind === 'OFF' ? '休み' : s.kind === 'PAID_LEAVE' ? '有給' : '出勤'));
-    tr.appendChild(el('td', s.start ? s.start + '〜' + s.end : '')); tr.appendChild(el('td', s.stage === 'CONFIRMED' ? '確定' : '希望')); ms.appendChild(tr);
+  var byDate = {};
+  h.shifts.forEach(function (s) { var g = byDate[s.date] = byDate[s.date] || {}; if (s.stage === 'CONFIRMED') g.conf = s; else g.req = s; });
+  Object.keys(byDate).sort().forEach(function (d) {
+    var g = byDate[d];
+    var tr = el('tr'); var td = el('td'); td.appendChild(dayCell(d, true).node); tr.appendChild(td);
+    var r = g.req;
+    tr.appendChild(el('td', !r ? '—' : r.kind === 'OFF' ? '休み希望' : '出勤 ' + r.start + '〜' + r.end, 'plan'));
+    var c = g.conf, ctd = el('td', null, 'plan');
+    if (c) ctd.appendChild(el('span', c.kind === 'PAID_LEAVE' ? '有給' : c.start + '〜' + c.end, 'chip ok'));
+    else ctd.appendChild(el('span', r && r.kind === 'WORK' ? '未確定' : '—', r && r.kind === 'WORK' ? 'chip warn' : 'muted'));
+    tr.appendChild(ctd); ms.appendChild(tr);
   });
-  if (!h.shifts.length) { var tr0 = el('tr'); var td0 = el('td', 'まだありません', 'muted'); td0.colSpan = 4; tr0.appendChild(td0); ms.appendChild(tr0); }
+  if (!h.shifts.length) { var tr0 = el('tr'); var td0 = el('td', 'まだありません', 'muted'); td0.colSpan = 3; tr0.appendChild(td0); ms.appendChild(tr0); }
   // 勤怠
   var ma = $('myAttend'); clear(ma);
   h.attendance.slice().reverse().forEach(function (d) {
-    var tr = el('tr'); tr.appendChild(el('td', d.date.slice(5).replace('-', '/')));
+    var tr = el('tr'); var dtd = el('td'); dtd.appendChild(dayCell(d.date, false).node); tr.appendChild(dtd);
     var lb = LABELS[d.label] || [d.label, '']; var td = el('td'); td.appendChild(el('span', lb[0], 'chip ' + lb[1]));
     if (d.late) td.appendChild(el('span', ' 遅刻候補', 'chip warn'));
     tr.appendChild(td);
@@ -319,6 +340,8 @@ function render() {
     tr.appendChild(el('td', d.hours ? d.hours + 'h' : '')); ma.appendChild(tr);
   });
   // 実績
+  var wm = h.work_month || {};
+  $('workMonth').textContent = '出勤 ' + (wm.worked_days || 0) + ' 日・実働 ' + (wm.hours || 0) + ' 時間（確定シフト ' + (wm.confirmed_days || 0) + ' 日）';
   var st = $('myStats'); clear(st);
   h.stats_month.forEach(function (r) {
     var tr = el('tr'); [r.project_name, r.calls, r.connected, r.appts_acquired, r.session_hours].forEach(function (v) { tr.appendChild(el('td', v)); }); st.appendChild(tr);
@@ -357,6 +380,25 @@ async function sendHeartbeat() {
 document.addEventListener('visibilitychange', function () { if (!document.hidden && state.token) { if (state.hbTimer) sendHeartbeat(); refresh().catch(function () {}); } });
 
 // シフト入力
+var JP_HOLIDAYS = {
+  '2026-01-01': '元日', '2026-01-12': '成人の日', '2026-02-11': '建国記念の日', '2026-02-23': '天皇誕生日', '2026-03-20': '春分の日',
+  '2026-04-29': '昭和の日', '2026-05-03': '憲法記念日', '2026-05-04': 'みどりの日', '2026-05-05': 'こどもの日', '2026-05-06': '振替休日',
+  '2026-07-20': '海の日', '2026-08-11': '山の日', '2026-09-21': '敬老の日', '2026-09-22': '国民の休日', '2026-09-23': '秋分の日',
+  '2026-10-12': 'スポーツの日', '2026-11-03': '文化の日', '2026-11-23': '勤労感謝の日',
+  '2027-01-01': '元日', '2027-01-11': '成人の日', '2027-02-11': '建国記念の日', '2027-02-23': '天皇誕生日', '2027-03-21': '春分の日',
+  '2027-03-22': '振替休日', '2027-04-29': '昭和の日', '2027-05-03': '憲法記念日', '2027-05-04': 'みどりの日', '2027-05-05': 'こどもの日',
+  '2027-07-19': '海の日', '2027-08-11': '山の日', '2027-09-20': '敬老の日', '2027-09-23': '秋分の日', '2027-10-11': 'スポーツの日',
+  '2027-11-03': '文化の日', '2027-11-23': '勤労感謝の日'
+};
+// 日付の表示（MM/DD（曜）・土=青・日祝=赤・祝日名）
+function dayCell(d, withName) {
+  var dow = new Date(d + 'T00:00:00Z').getUTCDay();
+  var hol = JP_HOLIDAYS[d];
+  var cls = hol ? 'd-hol' : dow === 0 ? 'd-sun' : dow === 6 ? 'd-sat' : '';
+  var box = el('span', d.slice(5).replace('-', '/') + '（' + '日月火水木金土'[dow] + '）', cls);
+  if (hol && withName) box.appendChild(el('span', hol, 'hol-name'));
+  return { node: box, cls: cls };
+}
 function periodLabel(k) { var m = +k.slice(5, 7); return k.slice(0, 4) + '年' + m + '月' + (k.slice(-1) === 'A' ? '前半（1〜15日）' : '後半（16日〜末日）'); }
 function datesOf(k) {
   var y = +k.slice(0, 4), m = +k.slice(5, 7), a = k.slice(-1) === 'A';
@@ -380,9 +422,9 @@ function renderDayRows() {
   $('deadlineNote').textContent = dl ? ('提出期限: ' + new Date(dl).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit' }) + '（期限前なら何度でも修正できます）') : '';
   var mine = {}; state.home.shifts.forEach(function (s) { if (s.stage === 'REQUEST' && s.period_key === k) mine[s.date] = s; });
   datesOf(k).forEach(function (d) {
-    var dow = new Date(d + 'T00:00:00Z').getUTCDay(); if (dow === 0 || dow === 6) return;
-    var row = el('div', null, 'day'); row.dataset.date = d;
-    row.appendChild(el('div', d.slice(5).replace('-', '/') + '（' + '日月火水木金土'[dow] + '）'));
+    var dc = dayCell(d, true);
+    var row = el('div', null, 'day' + (dc.cls ? ' day-mark' : '')); row.dataset.date = d; // 色は日付だけ・行は背景で区別
+    var dl = el('div'); dl.appendChild(dc.node); row.appendChild(dl);
     var times = el('div', null, 'times');
     var kind = el('select'); [['', '—'], ['WORK', '出勤可'], ['OFF', '希望休']].forEach(function (p) { var o = el('option', p[1]); o.value = p[0]; kind.appendChild(o); });
     var ex = mine[d]; if (ex) kind.value = ex.kind;
@@ -400,7 +442,7 @@ $('shiftSubmit').addEventListener('click', function (ev) {
   });
   if (!confirm(periodLabel(k) + ' を ' + days.length + ' 日分で提出します。よろしいですか？')) return;
   guarded(ev.currentTarget, async function () {
-    var r = await api('shift.submit', { period_key: k, days: days });
+    var r = await api('shift.submit', { period_key: k, days: days, note: $('shiftNote').value });
     await refresh(); toast('提出しました（' + r.version + '版・保存を確認済み）');
   });
 });
