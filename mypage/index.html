@@ -384,6 +384,7 @@ function render() {
   h.operators.forEach(function (o) {
     var box = el('div', null, 'op' + (o.mine ? ' mine' : o.busy ? ' busy' : ''));
     box.appendChild(el('div', o.label));
+    if (o.zoom_extension || o.zoom_phone_number) box.appendChild(el('div', [o.zoom_extension ? '内線' + o.zoom_extension : '', o.zoom_phone_number].filter(Boolean).join(' / '), 'muted'));
     box.appendChild(el('div', o.mine ? '自分が使用中' : o.busy ? '使用中' : '空き', 'muted'));
     if (!cur && !o.busy) {
       var b = el('button', 'ここで開始'); b.type = 'button';
