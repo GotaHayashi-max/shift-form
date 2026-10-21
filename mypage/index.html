@@ -85,10 +85,14 @@
       <div style="margin-top:12px"><button type="submit">認証コードを送る</button></div>
       <p id="toPwWrap" style="margin-top:12px"><a href="#" id="toPw">パスワードでログイン</a></p>
     </form>
+    <p id="otpStatus" class="muted" role="status" aria-live="polite"></p>
     <form id="codeForm" class="hidden">
+      <p id="otpSentTo" class="muted"></p>
       <label for="code">認証コード（6桁・10分有効）</label>
       <input id="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required>
-      <div class="row" style="margin-top:12px"><button type="submit">確認する</button><button type="button" id="backToEmail" class="secondary">メールアドレスを変更</button></div>
+      <div class="row" style="margin-top:12px"><button type="submit">確認する</button></div>
+      <div class="row" style="margin-top:8px"><button type="button" id="resendBtn" class="secondary" disabled>認証コードを再送する</button><button type="button" id="backToEmail" class="secondary">メールアドレスを変更</button></div>
+      <p class="muted" style="margin-top:10px">届かないときは: ①迷惑メールフォルダを確認 ②メールアドレスの入力ミスを確認 ③60秒たったら「再送」（同じコードが届きます）④10分たっても届かなければ管理者へ連絡</p>
     </form>
   </section>
 
@@ -241,7 +245,10 @@ async function api(action, params, opt) {
 async function guarded(btn, fn) {
   if (state.busy) return;
   state.busy = true; if (btn) btn.disabled = true;
-  try { await fn(); } catch (e) { toast(e.message || '通信に失敗しました。保存されていない可能性があります', true); }
+  try { await fn(); } catch (e) {
+    toast(e.message || '通信に失敗しました。保存されていない可能性があります', true);
+    if (OTP_HINT[e.code] && !$('authView').classList.contains('hidden')) otpStatus(e.message + ' ' + OTP_HINT[e.code], true);
+  }
   finally { state.busy = false; if (btn) btn.disabled = false; }
 }
 
@@ -254,6 +261,7 @@ function authMode(mode) {
   $('emailForm').classList.toggle('hidden', !otp);
   $('codeForm').classList.add('hidden');
   $('toPwWrap').classList.toggle('hidden', !!state.invite);
+  otpStatus('');
 }
 function showAuth() {
   $('appView').classList.add('hidden'); $('authView').classList.remove('hidden'); $('logoutBtn').classList.add('hidden'); $('who').textContent = '';
@@ -281,20 +289,46 @@ $('pwSave').addEventListener('click', function (ev) { savePassword(ev.currentTar
 $('pwSave2').addEventListener('click', function (ev) { savePassword(ev.currentTarget, $('pwNew2')); });
 $('pwLater').addEventListener('click', function () { $('pwSetCard').classList.add('hidden'); });
 
-$('emailForm').addEventListener('submit', function (ev) {
-  ev.preventDefault();
-  var btn = ev.submitter;
-  guarded(btn, async function () {
-    state.email = $('email').value.trim();
-    if (state.invite) await api('auth.redeemInvite', { invite_token: state.invite, email: state.email });
-    else await api('auth.requestLogin', { email: state.email });
+var OTP_HINT = {
+  BUSY: '混み合っています。10秒ほど待ってから、もう一度押してください。',
+  SEND_FAILED: 'メールを送信できませんでした。1分ほど待ってから「再送」を押してください。続く場合は管理者へ連絡してください。',
+  RATE_LIMITED: '送信回数の上限に達しました。1時間ほど待ってから再送してください。届いている最新のコードは引き続き使えます。',
+  OTP_INVALID: 'コードを確認してください。最新のメールのコードを入れるか、「再送」で同じコードをもう一度受け取れます。',
+  OTP_LOCKED: '試行回数が多すぎます。1時間ほど待ってからやり直してください。',
+  INVITE_INVALID: '招待リンクが無効です。管理者に再発行を依頼してください。', INVITE_EXPIRED: '招待リンクの期限が切れています。管理者に再発行を依頼してください。'
+};
+function otpStatus(text, ng) { var p = $('otpStatus'); p.textContent = text || ''; p.style.color = ng ? 'var(--ng)' : ''; }
+var resendTimer = null;
+function startResendCountdown(sec) {
+  var btn = $('resendBtn'); var left = sec || 60;
+  clearInterval(resendTimer); btn.disabled = true;
+  var tick = function () {
+    if (left <= 0) { clearInterval(resendTimer); btn.disabled = false; btn.textContent = '認証コードを再送する'; return; }
+    btn.textContent = '再送できるまで ' + left + ' 秒'; left--;
+  };
+  tick(); resendTimer = setInterval(tick, 1000);
+}
+async function sendCode(btn, isResend) {
+  if (state.busy) return;
+  state.busy = true; if (btn) btn.disabled = true;
+  otpStatus(isResend ? '再送しています…' : '認証コードを送信しています…');
+  try {
+    var r = state.invite ? await api('auth.redeemInvite', { invite_token: state.invite, email: state.email }) : await api('auth.requestLogin', { email: state.email });
     $('emailForm').classList.add('hidden'); $('codeForm').classList.remove('hidden'); $('code').focus();
-    toast('認証コードを送りました（届かない場合は迷惑メールもご確認ください）');
-  });
-});
-$('backToEmail').addEventListener('click', function () { $('codeForm').classList.add('hidden'); $('emailForm').classList.remove('hidden'); });
+    $('otpSentTo').textContent = state.email + ' 宛てに送信を受け付けました。通常は1〜2分以内に届きます（届く時間は保証できません）。';
+    otpStatus(isResend ? '同じ認証コードを再送しました（有効期限は最初の送信から10分です）。' : '');
+    startResendCountdown(r && r.resend_after_sec);
+  } catch (e) {
+    otpStatus((e.message || '通信に失敗しました') + ' ' + (OTP_HINT[e.code] || '通信状態を確認して、もう一度お試しください。'), true);
+    if (btn && btn.id === 'resendBtn') startResendCountdown(10); else if (btn) btn.disabled = false;
+  } finally { state.busy = false; if (btn && btn.id !== 'resendBtn') btn.disabled = false; }
+}
+$('emailForm').addEventListener('submit', function (ev) { ev.preventDefault(); state.email = $('email').value.trim(); sendCode(ev.submitter, false); });
+$('resendBtn').addEventListener('click', function (ev) { sendCode(ev.currentTarget, true); });
+$('backToEmail').addEventListener('click', function () { clearInterval(resendTimer); otpStatus(''); $('codeForm').classList.add('hidden'); $('emailForm').classList.remove('hidden'); });
 $('codeForm').addEventListener('submit', function (ev) {
   ev.preventDefault();
+  otpStatus('');
   guarded(ev.submitter, async function () {
     var r = await api('auth.verifyOtp', { email: state.email, code: $('code').value.trim(), purpose: state.invite ? 'REGISTER' : 'LOGIN', invite_token: state.invite || undefined });
     if (!r.active) { toast(r.registered ? '登録が完了しました。勤務開始日からご利用いただけます' : 'このアカウントは現在利用できません'); state.invite = null; return; }
