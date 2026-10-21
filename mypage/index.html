@@ -37,6 +37,7 @@
   nav.tabs a { flex: 1 0 auto; text-align: center; padding: 9px 12px; border-radius: 8px; background: var(--chip); color: var(--text); text-decoration: none; font-size: 14px; }
   nav.tabs a[aria-current="page"] { background: var(--accent); color: var(--accent-text); }
   .muted { color: var(--text2); font-size: 13px; }
+  a { color: var(--accent); }
   .chip { display: inline-block; white-space: nowrap; padding: 1px 8px; border-radius: 999px; background: var(--chip); font-size: 12px; }
   .chip.ok { color: var(--ok); } .chip.warn { color: var(--warn); } .chip.ng { color: var(--ng); }
   table { width: 100%; border-collapse: collapse; font-size: 14px; }
@@ -69,11 +70,20 @@
   <!-- 認証 -->
   <section id="authView" class="card hidden">
     <h2 id="authTitle">ログイン</h2>
-    <p id="authLead" class="muted">登録済みのメールアドレスに認証コードを送ります。</p>
-    <form id="emailForm">
+    <form id="pwForm">
+      <label for="pwEmail">メールアドレス</label>
+      <input id="pwEmail" type="email" autocomplete="username" required maxlength="200">
+      <label for="pwPass">パスワード</label>
+      <input id="pwPass" type="password" autocomplete="current-password" required maxlength="128">
+      <div style="margin-top:12px"><button type="submit">ログイン</button></div>
+      <p style="margin-top:12px"><a href="#" id="toOtp">認証コードでログイン（初めての方・パスワードを忘れた方）</a></p>
+    </form>
+    <p id="authLead" class="muted hidden">登録済みのメールアドレスに認証コードを送ります。</p>
+    <form id="emailForm" class="hidden">
       <label for="email">メールアドレス</label>
       <input id="email" type="email" autocomplete="email" required maxlength="200">
       <div style="margin-top:12px"><button type="submit">認証コードを送る</button></div>
+      <p id="toPwWrap" style="margin-top:12px"><a href="#" id="toPw">パスワードでログイン</a></p>
     </form>
     <form id="codeForm" class="hidden">
       <label for="code">認証コード（6桁・10分有効）</label>
@@ -84,6 +94,12 @@
 
   <!-- 本体 -->
   <section id="appView" class="hidden">
+    <div id="pwSetCard" class="card hidden">
+      <h2>パスワードを設定してください</h2>
+      <p class="muted">次回から、メールアドレスとパスワードだけでログインできます（8文字以上・メールアドレスと同じものは不可）。</p>
+      <input id="pwNew" type="password" autocomplete="new-password" maxlength="128" aria-label="新しいパスワード">
+      <div class="row" style="margin-top:12px"><button id="pwSave" type="button">設定する</button><button id="pwLater" type="button" class="secondary">あとで</button></div>
+    </div>
     <nav class="tabs" aria-label="メニュー">
       <a href="#call" data-tab="call">架電</a>
       <a href="#shift" data-tab="shift">シフト</a>
@@ -162,6 +178,14 @@
         <table><thead><tr><th>案件</th><th>架電</th><th>接続</th><th>アポ</th><th>架電h</th></tr></thead><tbody id="myStats"></tbody></table>
         <p class="muted">枠と時刻で本人に確定できた通話だけを数えています（未確定の通話は管理者が確認中）。</p>
       </div>
+      <div class="card">
+        <h2>パスワード</h2>
+        <p id="pwState" class="muted"></p>
+        <div id="pwChange" class="hidden">
+          <input id="pwNew2" type="password" autocomplete="new-password" maxlength="128" aria-label="新しいパスワード">
+          <div style="margin-top:12px"><button id="pwSave2" type="button">変更する</button></div>
+        </div>
+      </div>
     </div>
   </section>
 </main>
@@ -222,10 +246,40 @@ async function guarded(btn, fn) {
 }
 
 // ---------- 認証 ----------
+// 既定はメール＋パスワード。招待（初回登録）と、パスワード未設定・忘れたときは認証コード
+function authMode(mode) {
+  var otp = mode === 'otp';
+  $('pwForm').classList.toggle('hidden', otp);
+  $('authLead').classList.toggle('hidden', !otp);
+  $('emailForm').classList.toggle('hidden', !otp);
+  $('codeForm').classList.add('hidden');
+  $('toPwWrap').classList.toggle('hidden', !!state.invite);
+}
 function showAuth() {
   $('appView').classList.add('hidden'); $('authView').classList.remove('hidden'); $('logoutBtn').classList.add('hidden'); $('who').textContent = '';
-  if (state.invite) { $('authTitle').textContent = 'マイページ登録'; $('authLead').textContent = '招待メールを受け取ったメールアドレスを入力してください。'; }
+  if (state.invite) { $('authTitle').textContent = 'マイページ登録'; $('authLead').textContent = '招待メールを受け取ったメールアドレスを入力してください。'; authMode('otp'); }
+  else { $('authTitle').textContent = 'ログイン'; authMode('password'); }
 }
+$('toOtp').addEventListener('click', function (ev) { ev.preventDefault(); $('email').value = $('pwEmail').value; authMode('otp'); });
+$('toPw').addEventListener('click', function (ev) { ev.preventDefault(); authMode('password'); });
+$('pwForm').addEventListener('submit', function (ev) {
+  ev.preventDefault();
+  guarded(ev.submitter, async function () {
+    var r = await api('auth.loginPassword', { email: $('pwEmail').value.trim(), password: $('pwPass').value });
+    state.token = r.token; store(TOKEN_KEY, r.token); $('pwPass').value = '';
+    await refresh(); showApp(); toast('ログインしました');
+  });
+});
+async function savePassword(btn, input) {
+  await guarded(btn, async function () {
+    await api('auth.setPassword', { password: input.value });
+    input.value = ''; $('pwSetCard').classList.add('hidden');
+    await refresh(); toast('パスワードを設定しました。次回からメールアドレスとパスワードでログインできます');
+  });
+}
+$('pwSave').addEventListener('click', function (ev) { savePassword(ev.currentTarget, $('pwNew')); });
+$('pwSave2').addEventListener('click', function (ev) { savePassword(ev.currentTarget, $('pwNew2')); });
+$('pwLater').addEventListener('click', function () { $('pwSetCard').classList.add('hidden'); });
 
 $('emailForm').addEventListener('submit', function (ev) {
   ev.preventDefault();
@@ -247,6 +301,7 @@ $('codeForm').addEventListener('submit', function (ev) {
     state.token = r.token; store(TOKEN_KEY, r.token); state.invite = null;
     $('code').value = '';
     await refresh(); showApp();
+    if (!r.has_password) $('pwSetCard').classList.remove('hidden');
     toast(r.registered ? '登録が完了しました' : 'ログインしました');
   });
 });
@@ -255,7 +310,6 @@ function logout(silent) {
   var t = state.token;
   state.token = null; store(TOKEN_KEY, null); stopHeartbeat();
   if (t && !silent) { fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'auth.logout', token: t, request_id: uuid() }) }).catch(function () {}); }
-  $('codeForm').classList.add('hidden'); $('emailForm').classList.remove('hidden');
   showAuth();
   if (silent) toast('ログインの有効期限が切れました。もう一度ログインしてください', true);
 }
@@ -340,6 +394,9 @@ function render() {
     tr.appendChild(el('td', d.hours ? d.hours + 'h' : '')); ma.appendChild(tr);
   });
   // 実績
+  var pwSet = !!h.me.has_password, viaOtp = h.me.auth_method !== 'password';
+  $('pwState').textContent = (pwSet ? '設定済みです。' : 'まだ設定していません。') + (viaOtp ? '' : '変更は、ログアウトして「認証コードでログイン」からログインし直すとできます。');
+  $('pwChange').classList.toggle('hidden', !viaOtp);
   var wm = h.work_month || {};
   $('workMonth').textContent = '出勤 ' + (wm.worked_days || 0) + ' 日・実働 ' + (wm.hours || 0) + ' 時間（確定シフト ' + (wm.confirmed_days || 0) + ' 日）';
   var st = $('myStats'); clear(st);
