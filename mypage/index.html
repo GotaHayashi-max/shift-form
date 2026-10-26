@@ -2,141 +2,533 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#f6f8fc" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b1220" media="(prefers-color-scheme: dark)">
 <title>ネクスゲート マイページ</title>
 <style>
+  /* デザイントークン（色・背景・影・角丸はここだけで調整する）
+     方向性: 深いネイビー × 爽やかなブルー／オフホワイトにごく淡いグラデーション／白いカード＋細い境界線＋柔らかい影 */
   :root {
-    --bg: #f4f6f9; --surface: #ffffff; --border: #dde2ea; --text: #1d2433; --text2: #5d6678;
-    --accent: #1f5fbf; --accent-text: #ffffff; --ok: #1e7d4f; --warn: #a15c00; --ng: #b3261e; --chip: #eef2f8; --sat: #1f5fbf;
+    --navy: #0f1d3a; --navy2: #1b2f5c;
+    --bg: #f6f8fc; --bg-glow1: rgba(37, 99, 235, .07); --bg-glow2: rgba(14, 165, 233, .05);
+    --surface: #ffffff; --surface2: #f2f5fa; --border: #e3e8f1; --text: #0f1d3a; --text2: #55617a; --text3: #8792a8;
+    --accent: #2563eb; --accent-strong: #1d4ed8; --accent-soft: #e8effe; --accent-text: #ffffff;
+    --ok: #0f7a55; --ok-soft: #e2f4ec; --warn: #a35a00; --warn-soft: #fdf0dd; --ng: #c0362c; --ng-soft: #fbe9e7;
+    --info: #2563eb; --info-soft: #e8effe; --mute: #55617a; --mute-soft: #eef1f6;
+    --sat: #2563eb;
+    --hero1: #0f1d3a; --hero2: #1d4ed8;
+    --shadow: 0 1px 2px rgba(15, 29, 58, .04), 0 6px 20px rgba(15, 29, 58, .06);
+    --shadow-lg: 0 12px 32px rgba(15, 29, 58, .16);
+    --ring: 0 0 0 3px var(--accent-soft);
+    --r-sm: 10px; --r-md: 12px; --r-lg: 14px; --radius: 18px; --r-pill: 999px;
+    --tabbar: 64px; --header-h: 64px;
+    --ease: cubic-bezier(.2, .8, .2, 1);
   }
   @media (prefers-color-scheme: dark) {
-    :root { --bg: #12151b; --surface: #1b2029; --border: #2e3542; --text: #e6e9ef; --text2: #a3abba; --accent: #6ea2f2; --accent-text: #0c1320; --ok: #5cc28f; --warn: #e0a54a; --ng: #f08a80; --chip: #252c38; --sat: #8ab4f8; }
+    :root { --navy: #e6ecf6; --navy2: #c9d5ea;
+      --bg: #0b1220; --bg-glow1: rgba(59, 130, 246, .12); --bg-glow2: rgba(14, 165, 233, .06);
+      --surface: #121a2b; --surface2: #18233a; --border: #24314b; --text: #e6ecf6; --text2: #a3afc4; --text3: #74819a;
+      --accent: #60a5fa; --accent-strong: #93c5fd; --accent-soft: #172a4a; --accent-text: #0b1220;
+      --ok: #4fc795; --ok-soft: #12302a; --warn: #f0b35c; --warn-soft: #33270f; --ng: #ff8a7f; --ng-soft: #3a1b19;
+      --info: #7cb3ff; --info-soft: #172a4a; --mute: #a3afc4; --mute-soft: #1d2638; --sat: #8fb0ff;
+      --hero1: #13254d; --hero2: #1d4ed8;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .35), 0 6px 20px rgba(0, 0, 0, .25); --shadow-lg: 0 12px 32px rgba(0, 0, 0, .5); }
+    button.ok, button.danger { color: #0b1220; } /* 明るい緑・赤の上は暗い文字（コントラスト確保） */
   }
-  * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", sans-serif; font-size: 15px; line-height: 1.6; }
-  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 8px; position: sticky; top: 0; z-index: 5; }
-  header h1 { font-size: 16px; margin: 0; white-space: nowrap; flex: 0 0 auto; }
-  #who { display: inline-block; max-width: 42vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; }
-  header { flex-wrap: wrap; }
-  header > .row { flex: 0 1 auto; min-width: 0; flex-wrap: nowrap; margin-left: auto; }
-  header > .row > * { flex: 0 1 auto; }
-  #who { max-width: calc(100vw - 150px); }
-  main { max-width: 720px; margin: 0 auto; padding: 16px; }
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 14px; }
-  .card h2 { font-size: 15px; margin: 0 0 10px; }
-  label { display: block; font-size: 13px; color: var(--text2); margin: 10px 0 4px; }
-  input, select { width: 100%; font-size: 16px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); }
-  button { font-size: 15px; padding: 11px 16px; border-radius: 8px; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-text); cursor: pointer; min-height: 44px; }
-  button.secondary { background: transparent; color: var(--accent); }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; min-height: 100vh; background: radial-gradient(1100px 520px at 100% -8%, var(--bg-glow1), transparent 62%), radial-gradient(800px 460px at -12% 4%, var(--bg-glow2), transparent 58%), var(--bg); background-attachment: fixed; color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", "Segoe UI", sans-serif; font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  body.modal-open { overflow: hidden; }
+  svg.i { width: 20px; height: 20px; flex: 0 0 auto; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; vertical-align: -4px; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ヘッダー（不透明。スクロールした内容が透けて帯のように残らない） */
+  header { position: sticky; top: 0; z-index: 10; background: var(--bg); min-height: var(--header-h); border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+    padding: calc(10px + env(safe-area-inset-top)) 16px 10px; display: flex; align-items: center; gap: 10px; }
+  .brand { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 auto; }
+  .logo { width: 32px; height: 32px; border-radius: var(--r-sm); background: linear-gradient(140deg, var(--hero1), var(--hero2)); box-shadow: 0 4px 12px rgba(29, 78, 216, .25); color: var(--accent-text); display: grid; place-items: center; font-weight: 800; font-size: 15px; flex: 0 0 auto; }
+  header h1 { font-size: 16px; margin: 0; white-space: nowrap; color: var(--navy); letter-spacing: .01em; }
+  #who { display: block; font-size: 12px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: calc(100vw - 170px); }
+  .icon-btn { min-height: 40px; padding: 8px 12px; border-radius: var(--r-md); background: var(--surface); border: 1px solid var(--border); color: var(--text2); font-size: 13px; display: inline-flex; align-items: center; gap: 6px; }
+
+  main { max-width: 760px; margin: 0 auto; padding: 4px 16px calc(var(--tabbar) + 28px + env(safe-area-inset-bottom)); }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 14px; box-shadow: var(--shadow); }
+  .card h2 { font-size: 16px; margin: 0 0 4px; display: flex; align-items: center; gap: 8px; color: var(--navy); letter-spacing: .01em; }
+  .card h2 svg.i { color: var(--accent); }
+  .card .lead { margin: 0 0 12px; }
+  .card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
+  .card-head h2 { margin: 0; }
+  label { display: block; font-size: 13px; color: var(--text2); margin: 12px 0 6px; font-weight: 600; }
+  input, select, textarea { width: 100%; font-size: 16px; padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface); color: var(--text); font-family: inherit; transition: border-color .15s, box-shadow .15s; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: var(--ring); }
+  input:disabled, select:disabled { opacity: .5; }
+  input.invalid, select.invalid { border-color: var(--ng); box-shadow: 0 0 0 3px var(--ng-soft); }
+  .ferr { color: var(--ng); font-size: 12px; font-weight: 700; margin: 6px 0 0; }
+  .ferr[hidden] { display: none; }
+  .visually-hidden { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  .picker { display: flex; align-items: center; gap: 10px; margin: 0; padding: 14px; border: 1.5px dashed var(--border); border-radius: var(--r-md); background: var(--surface2); color: var(--accent); font-size: 14px; font-weight: 700; cursor: pointer; }
+  .picker span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .picker.has-file { border-style: solid; border-color: var(--accent); background: var(--accent-soft); }
+  #certFile:focus-visible + .picker, .picker:focus-within { box-shadow: var(--ring); }
+
+  button { font-family: inherit; font-size: 15px; font-weight: 700; padding: 12px 18px; border-radius: var(--r-md); border: 1px solid var(--accent); background: var(--accent); color: var(--accent-text);
+    cursor: pointer; min-height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: transform .08s ease, filter .15s, background .15s, opacity .15s; touch-action: manipulation; }
+  button:not(.secondary):not(.ghost):not(.x):not(.tclose):not(.a-edit):not(.week-head) { box-shadow: 0 1px 2px rgba(15, 29, 58, .08), 0 4px 12px color-mix(in srgb, var(--accent) 22%, transparent); }
+  button:hover:not(:disabled) { filter: brightness(1.04); }
+  button:active:not(:disabled) { transform: scale(.97); filter: brightness(.95); box-shadow: none; }
+  button.secondary { background: var(--surface); color: var(--accent); border-color: var(--border); }
+  button.ghost { background: transparent; border-color: transparent; color: var(--accent); min-height: 40px; padding: 8px 10px; }
   button.danger { background: var(--ng); border-color: var(--ng); color: #fff; }
-  button:disabled { opacity: .5; cursor: progress; }
-  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  button.ok { background: var(--ok); border-color: var(--ok); color: #fff; }
+  button.block { width: 100%; }
+  button.small { min-height: 36px; padding: 6px 12px; font-size: 13px; border-radius: var(--r-sm); }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  button[aria-busy="true"] { cursor: progress; }
+  button[aria-busy="true"]::before { content: ""; width: 16px; height: 16px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
   .row > * { flex: 1 1 auto; }
-  nav.tabs { display: flex; gap: 4px; overflow-x: auto; margin-bottom: 14px; }
-  nav.tabs a { flex: 1 0 auto; text-align: center; padding: 9px 12px; border-radius: 8px; background: var(--chip); color: var(--text); text-decoration: none; font-size: 14px; }
-  nav.tabs a[aria-current="page"] { background: var(--accent); color: var(--accent-text); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .muted { color: var(--text2); font-size: 13px; }
   a { color: var(--accent); }
-  .chip { display: inline-block; white-space: nowrap; padding: 1px 8px; border-radius: 999px; background: var(--chip); font-size: 12px; }
-  .chip.ok { color: var(--ok); } .chip.warn { color: var(--warn); } .chip.ng { color: var(--ng); }
-  table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  th, td { text-align: left; padding: 7px 6px; border-bottom: 1px solid var(--border); vertical-align: top; }
-  th { color: var(--text2); font-weight: 600; font-size: 12px; }
-  .ops { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
-  .op { border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
-  .op.busy { opacity: .6; } .op.mine { border-color: var(--ok); }
-  .day { display: grid; grid-template-columns: 92px 1fr; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); }
-  .day .times { display: flex; gap: 6px; align-items: center; }
+  .chip { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; padding: 2px 10px; border-radius: var(--r-pill); background: var(--surface2); color: var(--text2); font-size: 12px; font-weight: 700; }
+  .chip.ok { color: var(--ok); background: var(--ok-soft); } .chip.warn { color: var(--warn); background: var(--warn-soft); } .chip.ng { color: var(--ng); background: var(--ng-soft); } .chip.accent { color: var(--accent); background: var(--accent-soft); }
+
+  /* 状態バッジ（色＋アイコン＋文字。色だけに頼らない） */
+  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px 3px 7px; border-radius: var(--r-pill); font-size: 12px; font-weight: 700; line-height: 1.35; white-space: nowrap; background: var(--mute-soft); color: var(--mute); }
+  .badge svg.i { width: 13px; height: 13px; stroke-width: 2.6; vertical-align: 0; }
+  .badge.ok { color: var(--ok); background: var(--ok-soft); } .badge.warn { color: var(--warn); background: var(--warn-soft); }
+  .badge.info { color: var(--info); background: var(--info-soft); } .badge.ng { color: var(--ng); background: var(--ng-soft); }
+  .badge.sm { font-size: 11px; padding: 1px 8px 1px 6px; }
+
+  /* 今日の状態（架電タブだけに出す） */
+  .today { padding: 18px; background: linear-gradient(140deg, var(--hero1) 0%, var(--hero2) 100%); color: #fff; border: none; box-shadow: 0 10px 28px rgba(15, 29, 58, .22); }
+  .today .date { font-size: 13px; opacity: .85; font-weight: 600; }
+  .today .headline { font-size: 22px; font-weight: 800; margin: 2px 0 2px; letter-spacing: .01em; }
+  .today .sub { font-size: 13px; opacity: .9; }
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 14px 0 12px; }
+  .step { background: rgba(255, 255, 255, .14); border-radius: var(--r-md); padding: 8px 6px; text-align: center; font-size: 12px; font-weight: 700; line-height: 1.3; }
+  .step small { display: block; font-weight: 600; opacity: .85; font-size: 11px; margin-top: 2px; }
+  .step.done { background: rgba(255, 255, 255, .28); }
+  .step.now { background: #fff; color: #1d4ed8; }
+  .today button { background: #fff; color: #1d4ed8; border-color: #fff; }
+  .today button.secondary { background: rgba(255, 255, 255, .12); color: #fff; border-color: rgba(255, 255, 255, .35); }
+  .today .note { font-size: 12px; opacity: .85; margin-top: 10px; }
+
+  /* タブ（スマホは下部固定・PC はヘッダー直下に固定） */
+  nav.tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; display: grid; grid-template-columns: repeat(4, 1fr);
+    background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid var(--border); padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); }
+  nav.tabs a { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 4px; border-radius: var(--r-md); color: var(--text3); text-decoration: none; font-size: 11px; font-weight: 700; transition: color .15s, background .15s; }
+  nav.tabs a svg.i { width: 22px; height: 22px; }
+  nav.tabs a[aria-current="page"] { color: var(--accent); background: var(--accent-soft); }
+  @media (min-width: 840px) {
+    .tabwrap { position: sticky; top: var(--header-h); z-index: 9; background: var(--bg); padding: 0 0 12px; margin: 0 -16px; padding-left: 16px; padding-right: 16px; }
+    nav.tabs { position: static; border: 1px solid var(--border); border-radius: var(--r-lg); padding: 6px; box-shadow: var(--shadow); background: var(--surface); }
+    nav.tabs a { flex-direction: row; justify-content: center; font-size: 14px; gap: 8px; }
+    main { padding-bottom: 40px; }
+  }
+  .panel { animation: fade .22s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+  /* 架電 */
+  .live { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: var(--r-lg); background: var(--ok-soft); color: var(--ok); margin-bottom: 12px; }
+  .live .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 0 var(--ok); animation: pulse 1.8s infinite; flex: 0 0 auto; }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ok) 60%, transparent); } 70% { box-shadow: 0 0 0 10px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
+  .live .timer { margin-left: auto; font-variant-numeric: tabular-nums; font-weight: 800; font-size: 18px; }
+  #sessionNow { margin: 0; font-weight: 700; }
+  .idle { padding: 14px; border-radius: var(--r-lg); background: var(--surface2); color: var(--text2); margin-bottom: 12px; font-size: 14px; }
+  .ops { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+  .op { border: 1px solid var(--border); border-radius: var(--r-lg); padding: 12px; display: flex; flex-direction: column; gap: 6px; background: var(--surface); transition: border-color .15s, box-shadow .15s; }
+  .op .name { font-weight: 800; }
+  .op .state { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--ok); }
+  .op .state::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  .op.busy .state { color: var(--text3); } .op.mine { border-color: var(--ok); box-shadow: 0 0 0 3px var(--ok-soft); } .op.mine .state { color: var(--ok); }
+  .op button { min-height: 44px; margin-top: 2px; }
+
+  /* シフト */
+  .period-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 10px 0 2px; font-size: 13px; }
+  .notice { display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border-radius: var(--r-md); background: var(--warn-soft); color: var(--warn); font-size: 13px; font-weight: 600; margin: 10px 0 0; }
+  .notice.info { background: var(--info-soft); color: var(--info); }
+  .notice svg.i { width: 18px; height: 18px; margin-top: 1px; }
+  .notice button { margin-left: auto; }
+  .bulk { border: 1px solid var(--border); border-radius: var(--r-lg); background: var(--surface2); margin: 14px 0 6px; }
+  .bulk > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 12px 14px; font-weight: 700; font-size: 14px; min-height: 48px; }
+  .bulk > summary::-webkit-details-marker { display: none; }
+  .bulk > summary .chev { margin-left: auto; transition: transform .2s; color: var(--text3); }
+  .bulk[open] > summary .chev { transform: rotate(180deg); }
+  .bulk .bulk-body { padding: 0 14px 14px; }
+  .bulk .times-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center; }
+  .bulk select { padding: 10px 10px; }
+  .seg { display: flex; gap: 6px; flex-wrap: wrap; margin: 4px 0 0; padding: 0; border: 0; }
+  .seg legend { font-size: 13px; color: var(--text2); font-weight: 600; margin: 12px 0 6px; padding: 0; }
+  .seg label { margin: 0; display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 6px 12px; border: 1px solid var(--border); border-radius: var(--r-pill); background: var(--surface); color: var(--text); font-size: 14px; cursor: pointer; }
+  .seg label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+  .seg input { width: auto; margin: 0; accent-color: var(--accent); }
+  .check { display: flex; align-items: center; gap: 8px; margin: 12px 0 0; font-size: 13px; color: var(--text); font-weight: 600; }
+  .check input { width: 20px; height: 20px; margin: 0; accent-color: var(--accent); }
+  .bulk-preview { font-size: 13px; color: var(--text2); margin: 10px 0; }
+  .bulk-preview b { color: var(--text); }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 6px; }
+  .days { display: flex; flex-direction: column; }
+  .day { display: grid; grid-template-columns: 92px 1fr; grid-template-areas: "date kind" ". times" ". err"; column-gap: 10px; align-items: center; padding: 10px 8px; border-bottom: 1px solid var(--border); position: relative; border-radius: 0; transition: background .3s; }
+  .day:last-child { border-bottom: none; }
+  .day.day-mark { background: color-mix(in srgb, var(--surface2) 70%, transparent); }
+  .day.changed { box-shadow: inset 3px 0 0 var(--accent); }
+  .day.flash { background: var(--accent-soft); }
+  .day .dcell { grid-area: date; line-height: 1.3; }
+  .day .dcell .chip { margin-top: 4px; font-size: 11px; padding: 1px 8px; }
+  .day .pick { display: none; }
+  .days.picking .day { grid-template-columns: 34px 84px 1fr; grid-template-areas: "pick date kind" ". . times" ". . err"; }
+  .days.picking .day .pick { display: flex; grid-area: pick; margin: 0; align-items: center; }
+  .day .pick input { width: 22px; height: 22px; margin: 0; accent-color: var(--accent); }
+  .kind { grid-area: kind; display: inline-flex; justify-self: start; border: 1px solid var(--border); border-radius: var(--r-md); overflow: hidden; background: var(--surface); }
+  .kind button { min-height: 42px; padding: 6px 14px; border: 0; border-radius: 0; background: transparent; color: var(--text2); font-size: 14px; font-weight: 700; }
+  .kind button + button { border-left: 1px solid var(--border); }
+  .kind button[aria-pressed="true"][data-k="WORK"] { background: var(--ok-soft); color: var(--ok); }
+  .kind button[aria-pressed="true"][data-k="OFF"] { background: var(--mute-soft); color: var(--text); }
+  .kind button[aria-pressed="true"]::before { content: "✓"; font-size: 12px; }
+  .kind-wrap { grid-area: kind; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .kind-wrap .state-text { font-size: 12px; color: var(--text3); font-weight: 600; }
+  .day .times { grid-area: times; display: none; grid-template-columns: 1fr auto 1fr; gap: 6px; align-items: center; margin-top: 8px; max-width: 280px; }
+  .day.st-WORK .times { display: grid; }
+  .day .times select { padding: 9px 8px; font-size: 16px; border-radius: var(--r-sm); }
+  .day .ferr { grid-area: err; }
   .d-sat { color: var(--sat); } .d-sun, .d-hol { color: var(--ng); }
-  .day.day-mark { background: var(--chip); border-radius: 6px; padding-left: 6px; }
   .hol-name { display: block; font-size: 11px; line-height: 1.2; }
+  @media (min-width: 640px) {
+    .day { grid-template-columns: 110px auto 1fr; grid-template-areas: "date kind times" ". err err"; }
+    .days.picking .day { grid-template-columns: 34px 100px auto 1fr; grid-template-areas: "pick date kind times" ". . err err"; }
+    .day .times { margin-top: 0; }
+  }
+  /* 提出の固定バー（下部ナビの上・セーフエリア対応） */
+  .dock { position: sticky; bottom: calc(var(--tabbar) + 10px + env(safe-area-inset-bottom)); z-index: 8; display: flex; align-items: center; gap: 12px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 10px 10px 10px 16px; margin: 0 0 14px; box-shadow: var(--shadow-lg); }
+  .dock .prog { flex: 1 1 auto; min-width: 0; }
+  .dock .count { font-weight: 800; font-size: 15px; font-variant-numeric: tabular-nums; }
+  .dock .count b { font-size: 18px; }
+  .dock .sub { font-size: 12px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dock .sub.dirty { color: var(--accent); font-weight: 700; }
+  .dock .bar { height: 4px; border-radius: 4px; background: var(--surface2); margin-top: 6px; overflow: hidden; }
+  .dock .bar span { display: block; height: 100%; background: var(--accent); width: 0; transition: width .25s ease; }
+  .dock button { flex: 0 0 auto; min-width: 112px; }
+  @media (min-width: 840px) { .dock { bottom: 16px; } }
+
+  /* 一覧 */
+  .list { display: flex; flex-direction: column; }
+  .item { display: grid; grid-template-columns: 96px 1fr auto; gap: 8px; align-items: center; padding: 10px 2px; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .item:last-child { border-bottom: none; }
+  .item .meta { color: var(--text2); font-size: 13px; }
+  .empty { text-align: center; color: var(--text3); padding: 18px 8px; font-size: 13px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 6px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--text3); font-weight: 700; font-size: 12px; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   td.plan { white-space: nowrap; }
-  .day .times select { padding: 6px; font-size: 15px; }
-  #toast { position: fixed; left: 16px; right: 16px; bottom: 16px; max-width: 560px; margin: 0 auto; padding: 12px 14px; border-radius: 10px; background: var(--text); color: var(--bg); display: none; z-index: 20; }
-  #toast.ng { background: var(--ng); color: #fff; }
+
+  /* 勤怠: 週ごとの折りたたみ */
+  .week { border: 1px solid var(--border); border-radius: var(--r-lg); margin-top: 10px; overflow: hidden; }
+  .week-head { width: 100%; min-height: 56px; display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--surface2); color: var(--text); border: 0; border-radius: 0; text-align: left; font-size: 14px; }
+  .week-head .wt { display: flex; flex-direction: column; line-height: 1.35; min-width: 0; }
+  .week-head .wt small { font-size: 12px; color: var(--text2); font-weight: 600; }
+  .week-head .wsum { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+  .week-head .chev { color: var(--text3); transition: transform .2s; }
+  .week-head[aria-expanded="true"] .chev { transform: rotate(180deg); }
+  .week-body[hidden] { display: none; }
+  .att-head { display: none; }
+  .att { display: grid; grid-template-columns: 1fr auto; grid-template-areas: "date edit" "st edit" "time edit"; gap: 4px 10px; padding: 12px 14px; border-top: 1px solid var(--border); align-items: center; }
+  .att .a-date { grid-area: date; font-weight: 700; font-size: 14px; }
+  .att .a-st { grid-area: st; display: flex; flex-wrap: wrap; gap: 4px; }
+  .att .a-time { grid-area: time; display: flex; flex-wrap: wrap; gap: 2px 14px; font-size: 13px; color: var(--text); font-variant-numeric: tabular-nums; }
+  .att .a-time span small { color: var(--text3); font-weight: 600; margin-right: 4px; }
+  .att .a-time .none { color: var(--text3); }
+  .att .a-pend { grid-column: 1 / -1; font-size: 12px; color: var(--info); font-weight: 600; }
+  .att .a-edit { grid-area: edit; width: 44px; height: 44px; min-height: 44px; padding: 0; border-radius: var(--r-md); background: var(--surface); color: var(--accent); border: 1px solid var(--border); }
+  .att.is-today { background: color-mix(in srgb, var(--accent-soft) 45%, transparent); }
+  @media (min-width: 840px) {
+    .att-head, .att { grid-template-columns: 116px minmax(0, 1fr) 64px 64px 64px 72px 44px; grid-template-areas: none; }
+    .att-head { display: grid; gap: 10px; padding: 8px 14px; font-size: 12px; color: var(--text3); font-weight: 700; border-top: 1px solid var(--border); }
+    .att .a-date, .att .a-st, .att .a-edit { grid-area: auto; }
+    .att .a-time { display: contents; }
+    .att .a-time span { text-align: right; } .att .a-time span small { display: none; }
+    .att-head .num { text-align: right; }
+    .att .a-pend { grid-column: 2 / -2; }
+  }
+
+  /* 実績: KPI カード */
+  .kpi-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 12px 0 4px; }
+  @media (min-width: 640px) { .kpi-grid { grid-template-columns: repeat(4, 1fr); } }
+  .kpi { background: linear-gradient(180deg, var(--surface) 0%, color-mix(in srgb, var(--surface2) 55%, var(--surface)) 100%); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 14px; min-width: 0; }
+  .kpi .l { font-size: 12px; color: var(--text2); font-weight: 700; display: flex; align-items: center; gap: 6px; }
+  .kpi .l svg.i { width: 16px; height: 16px; color: var(--accent); vertical-align: 0; }
+  .kpi .v { font-size: 30px; font-weight: 800; color: var(--navy); font-variant-numeric: tabular-nums; line-height: 1.15; margin-top: 6px; letter-spacing: -.01em; }
+  .kpi .v small { font-size: 14px; color: var(--text2); font-weight: 700; margin-left: 3px; }
+  .kpi .s { font-size: 12px; color: var(--text3); margin-top: 4px; }
+  .kpi.na { border-style: dashed; background: transparent; }
+  .kpi.na .v { font-size: 17px; color: var(--text2); margin-top: 10px; }
+  .proj { display: grid; grid-template-columns: 1fr repeat(4, auto); gap: 4px 14px; align-items: baseline; padding: 12px 2px; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; }
+  .proj:last-child { border-bottom: none; }
+  .proj .pn { font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .proj .pv { text-align: right; font-weight: 800; font-size: 16px; }
+  .proj .pv small { display: block; font-size: 11px; color: var(--text3); font-weight: 600; }
+  @media (max-width: 480px) { .proj { grid-template-columns: repeat(4, 1fr); } .proj .pn { grid-column: 1 / -1; } .proj .pv { text-align: left; } }
+
+  .kind button, .today button.secondary, .num-step button { box-shadow: none !important; }
+
+  /* 営業実績（手入力）。Zoom の自動集計とは別のカード・別の表示名（「申告」）で出す */
+  .rep-today { display: flex; flex-direction: column; gap: 8px; margin: 12px 0 4px; }
+  .rep-item { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center; padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--r-lg); background: var(--surface); }
+  .rep-item .rp-name { font-weight: 800; color: var(--navy); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rep-item .rp-vals { grid-column: 1 / 2; display: flex; gap: 14px; flex-wrap: wrap; font-variant-numeric: tabular-nums; font-size: 13px; color: var(--text2); }
+  .rep-item .rp-vals b { font-size: 18px; color: var(--navy); margin-left: 3px; }
+  .rep-item .rp-meta { grid-column: 1 / -1; font-size: 12px; color: var(--text3); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .rep-item .rp-edit { grid-row: 1 / 3; grid-column: 2; }
+  .rep-empty { padding: 16px; border: 1.5px dashed var(--border); border-radius: var(--r-lg); text-align: center; color: var(--text2); font-size: 13px; }
+  .rep-sum { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0 0; font-variant-numeric: tabular-nums; }
+  .rep-sum .rs { background: var(--surface2); border-radius: var(--r-md); padding: 8px 12px; }
+  .rep-sum .rs small { display: block; font-size: 11px; color: var(--text2); font-weight: 700; }
+  .rep-sum .rs b { color: var(--navy); font-size: 20px; }
+  .rep-sum .rs-cap { grid-column: 1 / -1; font-size: 12px; color: var(--text3); }
+  .src-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 800; letter-spacing: .02em; padding: 1px 8px; border-radius: var(--r-pill); background: var(--accent-soft); color: var(--accent); }
+  .src-tag.zoom { background: var(--mute-soft); color: var(--mute); }
+  .rep-hist { margin: 6px 0 0; padding: 0; list-style: none; font-size: 12px; color: var(--text2); grid-column: 1 / -1; }
+  .rep-hist li { padding: 3px 0; border-top: 1px dashed var(--border); font-variant-numeric: tabular-nums; }
+  .rep-day { margin-top: 12px; }
+  .rep-day > .rd-head { font-size: 13px; font-weight: 800; color: var(--text2); margin: 0 2px 6px; }
+  .proj-pick { display: flex; flex-wrap: wrap; gap: 8px; }
+  .proj-pick label { margin: 0; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 8px 14px; border: 1px solid var(--border); border-radius: var(--r-pill); background: var(--surface); color: var(--text); font-size: 14px; font-weight: 700; cursor: pointer; transition: border-color .15s, background .15s; }
+  .proj-pick label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+  .proj-pick label .has { font-size: 11px; color: var(--text3); font-weight: 600; }
+  .proj-pick input { width: auto; margin: 0; accent-color: var(--accent); }
+  .num-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 4px; }
+  @media (min-width: 640px) { .num-grid { grid-template-columns: repeat(3, 1fr); } }
+  .num-field label { margin-top: 8px; display: flex; justify-content: space-between; align-items: baseline; }
+  .num-field label .was { font-weight: 600; color: var(--text3); font-size: 12px; }
+  .num-step { display: grid; grid-template-columns: 48px 1fr 48px; gap: 6px; }
+  .num-step input { text-align: center; font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; padding: 8px; color: var(--navy); }
+  .num-step button { min-height: 48px; padding: 0; background: var(--surface2); color: var(--text); border-color: var(--border); font-size: 20px; }
+  .num-field.changed input { border-color: var(--accent); background: color-mix(in srgb, var(--accent-soft) 55%, var(--surface)); }
+  .rep-confirm { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; padding: 14px; border-radius: var(--r-md); background: var(--surface2); font-variant-numeric: tabular-nums; }
+  .rep-confirm dt { color: var(--text2); font-size: 13px; font-weight: 600; } .rep-confirm dd { margin: 0; font-weight: 800; color: var(--navy); }
+  .rep-confirm .from { color: var(--text3); text-decoration: line-through; font-weight: 600; margin-right: 6px; }
+  .done-mark { width: 56px; height: 56px; border-radius: 50%; margin: 6px auto 10px; display: grid; place-items: center; background: var(--ok-soft); color: var(--ok); animation: pop .25s var(--ease); }
+  .done-mark svg.i { width: 28px; height: 28px; stroke-width: 2.6; }
+  .after-call { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 14px; border-radius: var(--r-lg); background: var(--accent-soft); color: var(--accent); margin-bottom: 12px; font-weight: 700; animation: fade .25s var(--ease); }
+  .after-call span { flex: 1 1 200px; }
+
+  /* 認証 */
+  .auth-wrap { max-width: 420px; margin: 6vh auto 0; }
+  .auth-hero { text-align: center; margin-bottom: 18px; }
+  .auth-hero .logo { width: 52px; height: 52px; border-radius: var(--r-lg); font-size: 22px; margin: 0 auto 10px; }
+  .auth-hero h2 { margin: 0; font-size: 20px; }
+  .link { display: block; text-align: center; margin-top: 14px; font-size: 14px; font-weight: 600; }
+  .hint { background: var(--surface2); border-radius: var(--r-md); padding: 10px 12px; font-size: 12px; color: var(--text2); margin-top: 12px; }
+
+  /* モーダル（スマホは下からのシート・PC は中央） */
+  dialog.sheet { border: 0; padding: 0; background: var(--surface); color: var(--text); border-radius: calc(var(--radius) + 2px); width: min(520px, calc(100vw - 32px)); max-height: calc(100vh - 48px); max-height: calc(100dvh - 48px); box-shadow: var(--shadow-lg); }
+  dialog.sheet[open] { display: flex; flex-direction: column; animation: pop .2s ease; }
+  dialog.sheet::backdrop { background: rgba(10, 14, 22, .45); }
+  @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
+  .sheet-head { display: flex; align-items: center; gap: 10px; padding: 16px 12px 8px 18px; }
+  .sheet-head h2 { margin: 0; font-size: 17px; flex: 1 1 auto; }
+  .sheet-head .x { width: 40px; height: 40px; min-height: 40px; padding: 0; border-radius: var(--r-md); background: transparent; border-color: transparent; color: var(--text2); }
+  .sheet-body { padding: 0 18px 4px; overflow: auto; overscroll-behavior: contain; }
+  .sheet-foot { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; padding: 12px 18px calc(16px + env(safe-area-inset-bottom)); border-top: 1px solid var(--border); }
+  @media (max-width: 639px) {
+    dialog.sheet { margin: auto 0 0; width: 100%; max-width: 100%; border-radius: calc(var(--radius) + 2px) calc(var(--radius) + 2px) 0 0; }
+    dialog.sheet[open] { animation: sheetUp .24s cubic-bezier(.2, .8, .2, 1); }
+    .sheet-head::before { content: ""; position: absolute; left: 50%; top: 6px; width: 36px; height: 4px; border-radius: 4px; background: var(--border); transform: translateX(-50%); }
+  }
+  @keyframes sheetUp { from { transform: translateY(40px); opacity: .6; } to { transform: none; opacity: 1; } }
+  .cmp { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; padding: 12px 14px; border-radius: var(--r-md); background: var(--surface2); font-size: 14px; margin: 4px 0 6px; font-variant-numeric: tabular-nums; }
+  .cmp dt { color: var(--text2); font-weight: 600; font-size: 13px; } .cmp dd { margin: 0; font-weight: 700; }
+  .cmp .none { color: var(--text3); font-weight: 600; }
+  .diff { margin: 12px 0 0; padding: 0; list-style: none; font-size: 13px; }
+  .diff li { display: flex; gap: 8px; align-items: baseline; padding: 4px 0; font-variant-numeric: tabular-nums; }
+  .diff .from { color: var(--text3); text-decoration: line-through; } .diff .to { color: var(--accent); font-weight: 800; }
+  .stepper { display: flex; gap: 6px; margin: 2px 0 14px; }
+  .stepper span { flex: 1; height: 4px; border-radius: 4px; background: var(--surface2); }
+  .stepper span.on { background: var(--accent); }
+  .sum-list { max-height: 34vh; overflow: auto; border: 1px solid var(--border); border-radius: var(--r-md); margin: 10px 0; }
+  .sum-list div { display: flex; justify-content: space-between; gap: 10px; padding: 7px 12px; border-bottom: 1px solid var(--border); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .sum-list div:last-child { border-bottom: none; }
+
+  /* 通知（下部ナビ・提出バーと重ならない位置） */
+  #toast { position: fixed; left: 16px; right: 16px; bottom: calc(var(--tabbar) + 16px + env(safe-area-inset-bottom)); max-width: 520px; margin: 0 auto; padding: 12px 8px 12px 16px; border-radius: var(--r-lg);
+    background: var(--text); color: var(--bg); display: none; align-items: center; gap: 10px; z-index: 30; font-weight: 600; font-size: 14px; box-shadow: 0 8px 30px rgba(0, 0, 0, .22); }
+  #toast.show { display: flex; animation: rise .2s ease; }
+  #toast .tmsg { flex: 1 1 auto; min-width: 0; padding: 2px 0; }
+  #toast .tclose { display: none; width: 36px; height: 36px; min-height: 36px; padding: 0; background: transparent; border-color: transparent; color: inherit; flex: 0 0 auto; }
+  #toast.ng { background: var(--ng); color: #fff; } #toast.ng .tclose { display: inline-flex; }
+  body.tab-shift #toast { bottom: calc(var(--tabbar) + 110px + env(safe-area-inset-bottom)); }
+  @media (min-width: 840px) { #toast, body.tab-shift #toast { bottom: 24px; } body.tab-shift #toast { bottom: 100px; } }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  #netBanner { position: sticky; top: 0; z-index: 11; background: var(--warn-soft); color: var(--warn); font-size: 13px; font-weight: 700; text-align: center; padding: 8px 12px; }
+  .skeleton { height: 120px; border-radius: var(--radius); background: linear-gradient(90deg, var(--surface2) 25%, var(--surface) 50%, var(--surface2) 75%); background-size: 200% 100%; animation: shimmer 1.2s infinite; margin-bottom: 14px; }
+  @keyframes shimmer { to { background-position: -200% 0; } }
+  #appView.loading > :not(#loading) { display: none !important; }
   .hidden { display: none !important; }
+  /* キーボード表示中は下部ナビと固定バーを隠して入力欄を隠さない（タッチ端末のみ） */
+  @media (max-width: 839px) and (pointer: coarse) { body.kb-open nav.tabs, body.kb-open .dock { display: none; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } html { scroll-behavior: auto; } }
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-phone" viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M12 18v-6M9 15l3-3 3 3"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+  <symbol id="i-out" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="10"/></symbol>
+  <symbol id="i-sync" viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 1-15.5 6.3L3 16M3 12a9 9 0 0 1 15.5-6.3L21 8"/><path d="M21 3v5h-5M3 21v-5h5"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></symbol>
+  <symbol id="i-minus" viewBox="0 0 24 24"><path d="M6 12h12"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></symbol>
+</svg>
+<div id="netBanner" class="hidden" role="status">オフラインです。つながると自動で再読み込みします</div>
 <header>
-  <h1>ネクスゲート マイページ</h1>
-  <div class="row" style="flex:0 0 auto">
-    <span id="who" class="muted"></span>
-    <button id="logoutBtn" class="secondary hidden" type="button">ログアウト</button>
+  <div class="brand">
+    <div class="logo" aria-hidden="true">N</div>
+    <div style="min-width:0">
+      <h1>ネクスゲート マイページ</h1>
+      <span id="who"></span>
+    </div>
   </div>
+  <button id="logoutBtn" class="icon-btn hidden" type="button"><svg class="i"><use href="#i-out"/></svg>ログアウト</button>
 </header>
 <main>
   <!-- 認証 -->
-  <section id="authView" class="card hidden">
-    <h2 id="authTitle">ログイン</h2>
-    <form id="pwForm">
-      <label for="pwEmail">メールアドレス</label>
-      <input id="pwEmail" type="email" autocomplete="username" required maxlength="200">
-      <label for="pwPass">パスワード</label>
-      <input id="pwPass" type="password" autocomplete="current-password" required maxlength="128">
-      <div style="margin-top:12px"><button type="submit">ログイン</button></div>
-      <p style="margin-top:12px"><a href="#" id="toOtp">認証コードでログイン（初めての方・パスワードを忘れた方）</a></p>
-    </form>
-    <p id="authLead" class="muted hidden">登録済みのメールアドレスに認証コードを送ります。</p>
-    <form id="emailForm" class="hidden">
-      <label for="email">メールアドレス</label>
-      <input id="email" type="email" autocomplete="email" required maxlength="200">
-      <div style="margin-top:12px"><button type="submit">認証コードを送る</button></div>
-      <p id="toPwWrap" style="margin-top:12px"><a href="#" id="toPw">パスワードでログイン</a></p>
-    </form>
-    <p id="otpStatus" class="muted" role="status" aria-live="polite"></p>
-    <form id="codeForm" class="hidden">
-      <p id="otpSentTo" class="muted"></p>
-      <label for="code">認証コード（6桁・10分有効）</label>
-      <input id="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required>
-      <div class="row" style="margin-top:12px"><button type="submit">確認する</button></div>
-      <div class="row" style="margin-top:8px"><button type="button" id="resendBtn" class="secondary" disabled>認証コードを再送する</button><button type="button" id="backToEmail" class="secondary">メールアドレスを変更</button></div>
-      <p class="muted" style="margin-top:10px">届かないときは: ①迷惑メールフォルダを確認 ②メールアドレスの入力ミスを確認 ③60秒たったら「再送」（同じコードが届きます）④10分たっても届かなければ管理者へ連絡</p>
-    </form>
+  <section id="authView" class="hidden auth-wrap">
+    <div class="auth-hero"><div class="logo" aria-hidden="true">N</div><h2 id="authTitle">ログイン</h2></div>
+    <div class="card">
+      <form id="pwForm">
+        <label for="pwEmail">メールアドレス</label>
+        <input id="pwEmail" type="email" autocomplete="username" required maxlength="200">
+        <label for="pwPass">パスワード</label>
+        <input id="pwPass" type="password" autocomplete="current-password" required maxlength="128">
+        <div style="margin-top:16px"><button type="submit" class="block">ログイン</button></div>
+        <a href="#" id="toOtp" class="link">認証コードでログイン（初めての方・パスワードを忘れた方）</a>
+      </form>
+      <p id="authLead" class="muted hidden">登録済みのメールアドレスに認証コードを送ります。</p>
+      <form id="emailForm" class="hidden">
+        <label for="email">メールアドレス</label>
+        <input id="email" type="email" autocomplete="email" required maxlength="200">
+        <div style="margin-top:16px"><button type="submit" class="block">認証コードを送る</button></div>
+        <p id="toPwWrap"><a href="#" id="toPw" class="link">パスワードでログイン</a></p>
+      </form>
+      <p id="otpStatus" class="muted" role="status" aria-live="polite"></p>
+      <form id="codeForm" class="hidden">
+        <p id="otpSentTo" class="muted"></p>
+        <label for="code">認証コード（6桁・10分有効）</label>
+        <input id="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required style="font-size:22px;letter-spacing:.3em;text-align:center">
+        <div style="margin-top:16px"><button type="submit" class="block">確認する</button></div>
+        <div class="grid2" style="margin-top:10px"><button type="button" id="resendBtn" class="secondary" disabled>認証コードを再送する</button><button type="button" id="backToEmail" class="secondary">メールアドレスを変更</button></div>
+        <div class="hint">届かないときは: ①迷惑メールフォルダを確認 ②メールアドレスの入力ミスを確認 ③60秒たったら「再送」（同じコードが届きます）④10分たっても届かなければ管理者へ連絡</div>
+      </form>
+    </div>
   </section>
 
   <!-- 本体 -->
   <section id="appView" class="hidden">
+    <div id="loading" class="hidden"><div class="skeleton"></div><div class="skeleton" style="height:200px"></div></div>
     <div id="pwSetCard" class="card hidden">
-      <h2>パスワードを設定してください</h2>
-      <p class="muted">次回から、メールアドレスとパスワードだけでログインできます（8文字以上・メールアドレスと同じものは不可）。</p>
+      <h2><svg class="i"><use href="#i-lock"/></svg>パスワードを設定してください</h2>
+      <p class="muted lead">次回から、メールアドレスとパスワードだけでログインできます（8文字以上・メールアドレスと同じものは不可）。</p>
       <input id="pwNew" type="password" autocomplete="new-password" maxlength="128" aria-label="新しいパスワード">
-      <div class="row" style="margin-top:12px"><button id="pwSave" type="button">設定する</button><button id="pwLater" type="button" class="secondary">あとで</button></div>
+      <div class="grid2" style="margin-top:12px"><button id="pwSave" type="button">設定する</button><button id="pwLater" type="button" class="secondary">あとで</button></div>
     </div>
-    <nav class="tabs" aria-label="メニュー">
-      <a href="#call" data-tab="call">架電</a>
-      <a href="#shift" data-tab="shift">シフト</a>
-      <a href="#attend" data-tab="attend">勤怠</a>
-      <a href="#stats" data-tab="stats">実績</a>
-    </nav>
 
-    <div data-panel="call">
+    <div class="tabwrap">
+      <nav class="tabs" aria-label="メニュー">
+        <a href="#call" data-tab="call"><svg class="i" aria-hidden="true"><use href="#i-phone"/></svg>架電</a>
+        <a href="#shift" data-tab="shift"><svg class="i" aria-hidden="true"><use href="#i-cal"/></svg>シフト</a>
+        <a href="#attend" data-tab="attend"><svg class="i" aria-hidden="true"><use href="#i-clock"/></svg>勤怠</a>
+        <a href="#stats" data-tab="stats"><svg class="i" aria-hidden="true"><use href="#i-chart"/></svg>実績</a>
+      </nav>
+    </div>
+
+    <div data-panel="call" class="panel">
+      <div id="todayCard" class="card today">
+        <div class="date" id="todayDate"></div>
+        <div class="headline" id="todayHeadline" aria-live="polite"></div>
+        <div class="sub" id="todaySub"></div>
+        <div class="steps" aria-label="今日の流れ">
+          <div class="step" id="stepIn">① 出勤打刻<small id="stepInT">勤怠タブ</small></div>
+          <div class="step" id="stepCall">② 架電<small id="stepCallT">開始〜終了</small></div>
+          <div class="step" id="stepOut">③ 退勤打刻<small id="stepOutT">勤怠タブ</small></div>
+        </div>
+        <div class="grid2" id="todayActions"></div>
+        <div class="note">出勤打刻と架電の開始は別の操作です。押した時間の通話だけが実績になります。</div>
+      </div>
       <div class="card">
-        <h2>架電セッション</h2>
-        <p id="sessionNow" class="muted"></p>
+        <h2><svg class="i"><use href="#i-phone"/></svg>架電セッション</h2>
+        <div id="liveBox" class="live hidden"><span class="dot" aria-hidden="true"></span><p id="sessionNow"></p><span class="timer" id="liveTimer"></span></div>
+        <div id="idleBox" class="idle"></div>
+        <div id="afterCall" class="after-call hidden" role="status"><span>架電おつかれさまでした。今日の営業実績を入力しますか？</span><button type="button" id="afterCallGo" class="small">営業実績を入力</button><button type="button" id="afterCallLater" class="small secondary">あとで</button></div>
         <label for="projectSel">案件</label>
         <select id="projectSel"></select>
-        <label>枠（オペレーター）</label>
+        <label>回線（オペレーター）</label>
         <div id="opGrid" class="ops"></div>
-        <div class="row" style="margin-top:12px">
+        <div class="grid2" style="margin-top:14px">
           <button id="switchBtn" type="button" class="secondary hidden">この案件に切り替える</button>
           <button id="endBtn" type="button" class="danger hidden">架電を終了</button>
         </div>
-        <p class="muted">開始・終了の時刻はサーバーの時刻で記録されます。画面を閉じても15分で自動終了します（要確認として記録）。</p>
+        <p class="muted" style="margin:12px 0 0">開始・終了の時刻はサーバーの時刻で記録されます。画面を閉じても15分で自動終了します（要確認として記録）。</p>
       </div>
     </div>
 
-    <div data-panel="shift" class="hidden">
+    <div data-panel="shift" class="panel hidden">
       <div class="card">
-        <h2>シフト希望の提出</h2>
+        <h2><svg class="i"><use href="#i-cal"/></svg>シフト希望の提出</h2>
         <label for="periodSel">対象期間</label>
         <select id="periodSel"></select>
-        <p id="deadlineNote" class="muted"></p>
-        <div id="dayRows"></div>
+        <div class="period-meta"><span id="periodBadge"></span><span id="deadlineNote" class="muted"></span></div>
+        <div id="draftNotice" class="notice info hidden" role="status"><svg class="i"><use href="#i-sync"/></svg><span id="draftText">前回の未提出の入力を、この端末から復元しました。</span><button id="draftDiscard" type="button" class="small secondary">破棄</button></div>
+
+        <details class="bulk" id="bulkPanel">
+          <summary><svg class="i" aria-hidden="true"><use href="#i-bolt"/></svg>まとめて入力<svg class="i chev" aria-hidden="true"><use href="#i-chev"/></svg></summary>
+          <div class="bulk-body">
+            <div class="times-row">
+              <div><label for="bulkStart" style="margin-top:0">開始</label><select id="bulkStart"></select></div>
+              <span class="muted" style="margin-top:22px">〜</span>
+              <div><label for="bulkEnd" style="margin-top:0">終了</label><select id="bulkEnd"></select></div>
+            </div>
+            <p id="bulkEndErr" class="ferr" hidden></p>
+            <fieldset class="seg" id="bulkTarget">
+              <legend>適用する日</legend>
+              <label><input type="radio" name="bulkTarget" value="all" checked>全日</label>
+              <label><input type="radio" name="bulkTarget" value="weekday">平日のみ</label>
+              <label><input type="radio" name="bulkTarget" value="picked">選択した日</label>
+            </fieldset>
+            <label class="check"><input type="checkbox" id="bulkOverwrite">入力済みの日（出勤可・希望休）も上書きする</label>
+            <p id="bulkPreview" class="bulk-preview" aria-live="polite"></p>
+            <button id="bulkApply" type="button" class="secondary block">出勤可として一括適用</button>
+            <p class="muted" style="margin:8px 0 0">一括適用しても提出はされません。日ごとに時刻を直してから、最後に「提出する」を押してください。</p>
+          </div>
+        </details>
+
+        <div class="legend" id="shiftLegend" aria-live="polite"></div>
+        <div id="dayRows" class="days"></div>
         <label for="shiftNote">備考（任意）</label>
         <input id="shiftNote" maxlength="500" placeholder="例: 水曜は14時以降なら可">
-        <div style="margin-top:12px"><button id="shiftSubmit" type="button">提出する</button></div>
+      </div>
+      <div class="dock" id="shiftDock">
+        <div class="prog">
+          <div class="count" id="shiftCount">入力済み <b>0</b> / 0日</div>
+          <div class="sub" id="shiftSub" aria-live="polite"></div>
+          <div class="bar" aria-hidden="true"><span id="shiftBar"></span></div>
+        </div>
+        <button id="shiftSubmit" type="button">提出する</button>
       </div>
       <div class="card">
         <h2>自分のシフト</h2>
@@ -144,87 +536,251 @@
       </div>
     </div>
 
-    <div data-panel="attend" class="hidden">
+    <div data-panel="attend" class="panel hidden">
       <div class="card">
-        <h2>打刻</h2>
-        <div class="row"><button id="punchIn" type="button">出勤</button><button id="punchOut" type="button" class="secondary">退勤</button></div>
+        <h2><svg class="i"><use href="#i-clock"/></svg>打刻</h2>
+        <p class="muted lead" id="punchState"></p>
+        <div class="grid2"><button id="punchIn" type="button" class="ok">出勤</button><button id="punchOut" type="button" class="secondary">退勤</button></div>
         <label for="breakMin">休憩（分・退勤時に記録）</label>
-        <input id="breakMin" type="number" min="0" max="600" step="5" value="60">
+        <input id="breakMin" type="number" inputmode="numeric" min="0" max="600" step="5" value="60">
       </div>
       <div class="card">
-        <h2>直近2週間</h2>
-        <table><thead><tr><th>日付</th><th>状態</th><th>打刻</th><th>実働</th></tr></thead><tbody id="myAttend"></tbody></table>
-        <p class="muted">「打刻漏れ」は欠勤ではありません。管理者が確認します。必要なら下から修正申請してください。</p>
+        <div class="card-head"><h2>直近2週間</h2></div>
+        <p class="muted" style="margin:0">打刻を忘れた・間違えた日は、右端の <svg class="i" style="width:15px;height:15px;vertical-align:-2px" aria-label="編集"><use href="#i-edit"/></svg> から修正を申請できます。</p>
+        <div id="myAttend"></div>
+        <p class="muted" style="margin:12px 0 0">「打刻漏れ」「シフト未提出」は欠勤ではありません。欠勤は管理者が確定した日だけです。</p>
       </div>
-      <div class="card">
-        <h2>証明書類の提出</h2>
-        <p class="muted">通勤経路・本人確認などの証明書類は <a href="https://docs.google.com/forms/d/e/1FAIpQLScCAvJ6oAkZ5fQs2VY2jYFlF-i7k1C3_JjCIGAh74B9PHu3mg/viewform" target="_blank" rel="noopener noreferrer">こちらのフォーム</a> から提出してください。</p>
-      </div>
-      <div class="card">
-        <h2>修正申請</h2>
-        <p class="muted">打刻を忘れた・間違えたときに使います。管理者が承認すると勤務実績に反映されます。</p>
-        <div class="row">
-          <div><label for="corDate">日付</label><input id="corDate" type="date"></div>
-          <div><label for="corIn">出勤</label><input id="corIn" type="time"></div>
-          <div><label for="corOut">退勤</label><input id="corOut" type="time"></div>
-          <div><label for="corBreak">休憩(分)</label><input id="corBreak" type="number" min="0" max="600" value="60"></div>
+      <div class="card hidden" id="certCard">
+        <h2><svg class="i"><use href="#i-file"/></svg>証明書類の提出</h2>
+        <p class="muted lead">遅延証明書・病院の領収書などを提出します。提出した書類は管理者だけが確認できます。</p>
+        <div class="grid2">
+          <div><label for="certKind">書類の種類</label><select id="certKind"></select></div>
+          <div><label for="certDate">対象日</label><input id="certDate" type="date"></div>
         </div>
-        <label for="corNote">理由</label><input id="corNote" maxlength="500">
-        <div style="margin-top:12px"><button id="corSubmit" type="button">申請する</button></div>
+        <label for="certFile">ファイル（PDF・写真／10MBまで）</label>
+        <label class="picker" for="certFile"><svg class="i"><use href="#i-file"/></svg><span id="certFileName">ファイルを選ぶ・写真を撮る</span></label>
+        <input id="certFile" class="visually-hidden" type="file" accept="application/pdf,image/jpeg,image/png,image/heic,image/heif,image/webp">
+        <label for="certNote">メモ（任意）</label><input id="certNote" maxlength="500" placeholder="例: 〇〇線 20分遅延">
+        <div style="margin-top:14px"><button id="certSubmit" type="button" class="block">提出する</button></div>
+        <div id="myCerts" class="list" style="margin-top:10px"></div>
       </div>
     </div>
 
-    <div data-panel="stats" class="hidden">
-      <div class="card">
-        <h2>今月の勤務</h2>
-        <p id="workMonth" class="muted"></p>
-        <h2>今月の実績</h2>
-        <table><thead><tr><th>案件</th><th>架電</th><th>接続</th><th>アポ</th><th>架電h</th></tr></thead><tbody id="myStats"></tbody></table>
-        <p class="muted">枠と時刻で本人に確定できた通話だけを数えています（未確定の通話は管理者が確認中）。</p>
+    <div data-panel="stats" class="panel hidden">
+      <div class="card" id="reportCard">
+        <div class="card-head"><h2><svg class="i"><use href="#i-edit"/></svg>今日の営業実績</h2><span class="src-tag">申告（手入力）</span></div>
+        <p class="muted" style="margin:2px 0 0">コール数・コンタクト数・AP数を案件ごとに入力します。Zoom の通話件数とは別に記録され、足し合わされません。</p>
+        <div id="repToday" class="rep-today"></div>
+        <button id="reportOpen" type="button" class="block">営業実績を入力</button>
+        <div id="repMonth" class="rep-sum"></div>
+        <details class="bulk" id="repPast" style="margin-top:12px">
+          <summary><svg class="i" aria-hidden="true"><use href="#i-cal"/></svg>過去の入力・修正履歴<svg class="i chev" aria-hidden="true"><use href="#i-chev"/></svg></summary>
+          <div class="bulk-body" id="repPastList"></div>
+        </details>
       </div>
       <div class="card">
-        <h2>パスワード</h2>
-        <p id="pwState" class="muted"></p>
-        <div id="pwChange" class="hidden">
-          <input id="pwNew2" type="password" autocomplete="new-password" maxlength="128" aria-label="新しいパスワード">
-          <div style="margin-top:12px"><button id="pwSave2" type="button">変更する</button></div>
+        <div class="card-head"><h2><svg class="i"><use href="#i-chart"/></svg>今月の実績</h2><span class="muted" id="statsMonth"></span></div>
+        <p class="muted" style="margin:2px 0 0"><span class="src-tag zoom">Zoom・勤怠</span> 架電数・接続数は回線と時刻で本人に確定した通話だけ（自動）。</p>
+        <div class="kpi-grid">
+          <div class="kpi"><div class="l"><svg class="i" aria-hidden="true"><use href="#i-cal"/></svg>出勤日数</div><div class="v"><span id="kDays">0</span><small>日</small></div><div class="s" id="kDaysSub"></div></div>
+          <div class="kpi"><div class="l"><svg class="i" aria-hidden="true"><use href="#i-clock"/></svg>実働時間</div><div class="v"><span id="kHours">0</span><small>時間</small></div><div class="s">承認前の修正申請は含みません</div></div>
+          <div class="kpi"><div class="l"><svg class="i" aria-hidden="true"><use href="#i-phone"/></svg>架電数</div><div class="v"><span id="kCalls">0</span><small>件</small></div><div class="s" id="kCallsSub"></div></div>
+          <div class="kpi"><div class="l"><svg class="i" aria-hidden="true"><use href="#i-link"/></svg>接続数</div><div class="v"><span id="kConn">0</span><small>件</small></div><div class="s" id="kConnSub"></div></div>
         </div>
+        <p id="workMonth" class="muted" style="margin:8px 0 0"></p>
+      </div>
+      <div class="card">
+        <h2><svg class="i"><use href="#i-users"/></svg>案件別</h2>
+        <div id="myStats"></div>
+        <div class="kpi na" style="margin-top:12px">
+          <div class="l">AP数</div>
+          <div class="v">Zoom では数えません</div>
+          <div class="s">AP数は本人の申告（上の「今日の営業実績」）だけで記録します。Twenty の商談件数とは、定義がそろうまで合算しません。</div>
+        </div>
+        <p class="muted" style="margin:10px 0 0">架電・接続は、回線と時刻で本人に確定できた通話だけを数えています（照合待ちの通話は含みません）。</p>
+      </div>
+      <div class="card">
+        <h2><svg class="i"><use href="#i-lock"/></svg>パスワード</h2>
+        <p id="pwState" class="muted"></p>
+        <button id="pwOpen" type="button" class="secondary block">パスワードを変更</button>
       </div>
     </div>
   </section>
 </main>
-<div id="toast" role="status" aria-live="polite"></div>
+
+<!-- シフト提出の確認 -->
+<dialog id="shiftConfirm" class="sheet" aria-labelledby="scTitle">
+  <div class="sheet-head"><h2 id="scTitle">提出内容の確認</h2><button type="button" class="x" data-close aria-label="閉じる"><svg class="i"><use href="#i-x"/></svg></button></div>
+  <div class="sheet-body">
+    <p id="scPeriod" style="margin:0;font-weight:800"></p>
+    <div class="legend" id="scCounts"></div>
+    <div class="sum-list" id="scList"></div>
+    <p id="scNote" class="muted" style="margin:0 0 8px"></p>
+    <p class="muted" style="margin:0 0 8px">「未選択」の日は希望なしとして扱われます。期限内なら何度でも出し直せます（前の版は置き換わります）。</p>
+  </div>
+  <div class="sheet-foot"><button type="button" class="secondary" data-close>戻って修正</button><button type="button" id="shiftConfirmOk">この内容で提出する</button></div>
+</dialog>
+
+<!-- 営業実績の入力（入力 → 確認 → 保存完了） -->
+<dialog id="reportDialog" class="sheet" aria-labelledby="repTitle">
+  <div class="sheet-head"><h2 id="repTitle">営業実績を入力</h2><button type="button" class="x" data-close aria-label="閉じる"><svg class="i"><use href="#i-x"/></svg></button></div>
+  <div class="sheet-body">
+    <div class="stepper" aria-hidden="true"><span data-s="1"></span><span data-s="2"></span><span data-s="3"></span></div>
+    <p class="sr-only" id="repStepLabel" aria-live="polite"></p>
+    <div data-rstep="1">
+      <div class="grid2">
+        <div><label for="repDate" style="margin-top:0">日付</label><input id="repDate" type="date"></div>
+        <div><label style="margin-top:0">入力する人</label><div id="repWho" style="padding:12px 0;font-weight:800;color:var(--navy)"></div></div>
+      </div>
+      <fieldset class="seg" style="margin-top:6px"><legend>案件</legend><div class="proj-pick" id="repProjects"></div></fieldset>
+      <p id="repProjectsErr" class="ferr" hidden></p>
+      <div id="repMode" class="notice info hidden" style="margin-top:12px"><svg class="i"><use href="#i-sync"/></svg><span></span></div>
+      <div class="num-grid" id="repFields"></div>
+      <label for="repNote">備考（任意）</label>
+      <input id="repNote" maxlength="500" placeholder="例: 午後は日本プラミングに切替">
+      <p class="muted" style="margin:10px 0 12px">数字は申告として保存されます（Zoom の通話件数とは別）。保存後も同じ画面から修正でき、修正前の値は履歴に残ります。</p>
+    </div>
+    <div data-rstep="2" hidden>
+      <p style="margin:0 0 8px;font-weight:800;color:var(--navy)">この内容で保存します</p>
+      <dl class="rep-confirm" id="repConfirm"></dl>
+      <div id="repWarn" class="notice hidden" style="margin-top:10px"><svg class="i"><use href="#i-alert"/></svg><span></span></div>
+      <p class="muted" style="margin:10px 0 12px">保存すると、管理用のシート（開発用 ISM シートの Activity_Reports）に記録されます。</p>
+    </div>
+    <div data-rstep="3" hidden style="text-align:center;padding:6px 0 14px">
+      <div class="done-mark"><svg class="i"><use href="#i-check"/></svg></div>
+      <p style="margin:0 0 4px;font-weight:800;color:var(--navy)" id="repDoneTitle">保存しました</p>
+      <p class="muted" style="margin:0" id="repDoneText"></p>
+    </div>
+  </div>
+  <div class="sheet-foot" id="repFoot1"><button type="button" class="secondary" data-close>キャンセル</button><button type="button" id="repNext">確認へ進む</button></div>
+  <div class="sheet-foot hidden" id="repFoot2"><button type="button" class="secondary" id="repBack">戻って修正</button><button type="button" id="repSave">保存する</button></div>
+  <div class="sheet-foot hidden" id="repFoot3"><button type="button" class="secondary" id="repAnother">別の案件も入力</button><button type="button" data-close>閉じる</button></div>
+</dialog>
+
+<!-- 修正申請 -->
+<dialog id="corDialog" class="sheet" aria-labelledby="corTitle">
+  <div class="sheet-head"><h2 id="corTitle">修正を申請</h2><button type="button" class="x" data-close aria-label="閉じる"><svg class="i"><use href="#i-x"/></svg></button></div>
+  <div class="sheet-body">
+    <input id="corDate" type="hidden">
+    <p style="margin:0 0 6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap"><b id="corDateText"></b><span id="corDateBadge"></span></p>
+    <p class="muted" style="margin:6px 0 4px">現在の記録</p>
+    <dl class="cmp" id="corCurrent"></dl>
+    <div id="corPending" class="notice info hidden"><svg class="i"><use href="#i-sync"/></svg><span></span></div>
+    <div class="grid2">
+      <div><label for="corIn">出勤</label><input id="corIn" type="time" required></div>
+      <div><label for="corOut">退勤</label><input id="corOut" type="time" required></div>
+    </div>
+    <label for="corBreak">休憩（分）</label><input id="corBreak" type="number" inputmode="numeric" min="0" max="600" step="5" placeholder="例: 60">
+    <label for="corNote">修正理由</label><input id="corNote" maxlength="500" placeholder="例: 退勤の打刻を忘れました">
+    <ul class="diff" id="corDiff" aria-live="polite"></ul>
+    <p class="muted" style="margin:10px 0 12px">申請は管理者の承認待ちになります。承認されるまで勤務実績は変わりません。</p>
+  </div>
+  <div class="sheet-foot"><button type="button" class="secondary" data-close>キャンセル</button><button type="button" id="corSubmit">申請する</button></div>
+</dialog>
+
+<!-- パスワード変更（本人再認証 → 新パスワード → 完了） -->
+<dialog id="pwDialog" class="sheet" aria-labelledby="pwTitle">
+  <div class="sheet-head"><h2 id="pwTitle">パスワードの変更</h2><button type="button" class="x" data-close aria-label="閉じる"><svg class="i"><use href="#i-x"/></svg></button></div>
+  <div class="sheet-body">
+    <div class="stepper" aria-hidden="true"><span data-s="1"></span><span data-s="2"></span><span data-s="3"></span></div>
+    <p class="sr-only" id="pwStepLabel" aria-live="polite"></p>
+    <div data-step="1">
+      <p style="margin:0 0 8px;font-weight:700">本人確認</p>
+      <p class="muted" style="margin:0 0 14px">安全のため、登録済みのメールアドレスに認証コードを送り、本人確認をしてから変更します。この画面を閉じても、勤務や架電の状態は変わりません。</p>
+      <button id="reauthSend" type="button" class="block">認証コードを送る</button>
+      <p id="reauthSendErr" class="ferr" hidden></p>
+    </div>
+    <div data-step="2" hidden>
+      <p id="reauthSentTo" class="muted" style="margin:0 0 4px"></p>
+      <label for="reauthCode">認証コード（6桁・10分有効）</label>
+      <input id="reauthCode" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" style="font-size:22px;letter-spacing:.3em;text-align:center">
+      <p id="reauthCodeErr" class="ferr" hidden></p>
+      <div style="margin-top:14px"><button id="reauthVerify" type="button" class="block">確認する</button></div>
+      <button id="reauthResend" type="button" class="ghost block" disabled style="margin-top:6px">認証コードを再送する</button>
+    </div>
+    <div data-step="3" hidden>
+      <p style="margin:0 0 4px;font-weight:700">新しいパスワード</p>
+      <p class="muted" style="margin:0">8文字以上・メールアドレスと同じものは不可。本人確認から10分以内に保存してください。</p>
+      <label for="pwNew2">新しいパスワード</label>
+      <input id="pwNew2" type="password" autocomplete="new-password" maxlength="128">
+      <label for="pwNew2c">確認のためもう一度</label>
+      <input id="pwNew2c" type="password" autocomplete="new-password" maxlength="128">
+      <p id="pwNew2cErr" class="ferr" hidden></p>
+      <label class="check"><input type="checkbox" id="pwShow">パスワードを表示する</label>
+      <div style="margin:14px 0 6px"><button id="pwSave2" type="button" class="block">保存する</button></div>
+    </div>
+    <div data-step="4" hidden style="text-align:center;padding:10px 0 16px">
+      <div class="badge ok" style="font-size:14px;padding:6px 14px"><svg class="i"><use href="#i-check"/></svg>保存しました</div>
+      <p style="margin:12px 0 4px;font-weight:700">パスワードを変更しました</p>
+      <p class="muted" style="margin:0">次回のログインから新しいパスワードを使ってください。今の画面はそのまま使えます。</p>
+    </div>
+  </div>
+  <div class="sheet-foot" style="grid-template-columns:1fr"><button type="button" class="secondary" data-close id="pwClose">閉じる</button></div>
+</dialog>
+
+<div id="toast" role="status" aria-live="polite"><span class="tmsg" id="toastMsg"></span><button type="button" class="tclose" id="toastClose" aria-label="通知を閉じる"><svg class="i"><use href="#i-x"/></svg></button></div>
 
 <script>
 'use strict';
 // API の URL は公開して問題ない（全操作が本人認証付き）。秘密情報はこのファイルに置かない
 var API_URL = 'https://script.google.com/macros/s/AKfycbxGYUOyEHqZlBAhYKHi_yrsASL-UBwOPieek5Y_z-eJ40i35U0rHw5e5GrsxSPoI1AS2w/exec';
 var TOKEN_KEY = 'ism_token';
-var state = { token: null, home: null, invite: null, email: '', busy: false, hbTimer: null };
+var DRAFT_PREFIX = 'ism_shift_draft:';
+var state = { token: null, home: null, invite: null, email: '', busy: false, hbTimer: null, liveTimer: null, openWeeks: {} };
 
 function store(k, v) { try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
 function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
 function $(id) { return document.getElementById(id); }
 function el(tag, text, cls) { var e = document.createElement(tag); if (text !== undefined && text !== null) e.textContent = String(text); if (cls) e.className = cls; return e; }
 function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); }
+function icon(id, cls) { var s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('class', 'i' + (cls ? ' ' + cls : '')); s.setAttribute('aria-hidden', 'true'); var u = document.createElementNS('http://www.w3.org/2000/svg', 'use'); u.setAttribute('href', '#' + id); s.appendChild(u); return s; }
 function uuid() { return (crypto.randomUUID ? crypto.randomUUID() : Array.from(crypto.getRandomValues(new Uint8Array(16)), function (b) { return ('0' + b.toString(16)).slice(-2); }).join('')); }
 
-function toast(msg, ng) {
-  var t = $('toast'); t.textContent = msg; t.className = ng ? 'ng' : ''; t.style.display = 'block';
-  clearTimeout(toast._t); toast._t = setTimeout(function () { t.style.display = 'none'; }, ng ? 6000 : 3000);
+// 通知: 成功は数秒で消える／エラーは長めに出して閉じるボタン付き（読み上げも即時）
+function toast(msg, kind) {
+  var ng = kind === true || kind === 'ng';
+  var t = $('toast');
+  t.setAttribute('role', ng ? 'alert' : 'status'); t.setAttribute('aria-live', ng ? 'assertive' : 'polite');
+  t.className = ''; void t.offsetWidth;
+  $('toastMsg').textContent = msg; t.className = 'show ' + (ng ? 'ng' : 'ok');
+  toast._ms = ng ? 9000 : 3500; toastTimer(toast._ms);
 }
+function toastTimer(ms) { clearTimeout(toast._t); toast._t = setTimeout(hideToast, ms); }
+function hideToast() { $('toast').className = ''; }
+$('toastClose').addEventListener('click', hideToast);
+$('toast').addEventListener('pointerenter', function () { clearTimeout(toast._t); });
+$('toast').addEventListener('pointerleave', function () { if ($('toast').classList.contains('show')) toastTimer(2500); });
+
+// 入力欄のエラー表示（トーストだけにしない）
+function fieldErr(input, msg) {
+  var id = input.id + 'Err'; var p = $(id);
+  if (!p) { p = el('p', '', 'ferr'); p.id = id; input.insertAdjacentElement('afterend', p); }
+  p.textContent = msg || ''; p.hidden = !msg;
+  input.classList.toggle('invalid', !!msg);
+  if (msg) { input.setAttribute('aria-invalid', 'true'); input.setAttribute('aria-describedby', id); } else { input.removeAttribute('aria-invalid'); }
+}
+
+// 通信状態（オフラインの間は表示し、戻ったら再読み込み）
+function netState() { $('netBanner').classList.toggle('hidden', navigator.onLine !== false); }
+window.addEventListener('offline', netState);
+window.addEventListener('online', function () { netState(); if (state.token) refresh().catch(function () {}); });
 
 // 応答 JSON の ok と request_id を確認できたときだけ成功扱い。通信失敗は同じ request_id で最大2回再送
 async function api(action, params, opt) {
   opt = opt || {};
   var body = Object.assign({}, params || {}, { action: action, request_id: opt.requestId || uuid() });
+  body.client_sent_ms = Date.now(); // 端末→サーバーの待ちを切り分けるため（GAS の Slow_Log）
   if (state.token) body.token = state.token;
   var lastErr;
   for (var attempt = 0; attempt < 3; attempt++) {
+    // 1 回 25 秒で打ち切って同じ request_id で再送（サーバー側で処理済みなら前の応答が返る＝二重登録しない）
+    var ctl = window.AbortController ? new AbortController() : null;
+    var timer = ctl ? setTimeout(function () { ctl.abort(); }, opt.timeoutMs || 25000) : null;
     try {
-      var res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body), redirect: 'follow', cache: 'no-store' });
+      var res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body), redirect: 'follow', cache: 'no-store', signal: ctl ? ctl.signal : undefined });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       var json = await res.json();
+      if (timer) clearTimeout(timer);
       if (json.request_id !== body.request_id) throw new Error('応答の照合に失敗しました');
       if (!json.ok) {
         var code = json.error && json.error.code;
@@ -235,22 +791,41 @@ async function api(action, params, opt) {
     } catch (err) {
       lastErr = err;
       if (err.server || err.code === 'BUSY') break;
+      if (err.name === 'AbortError') { err.timeout = true; continue; } // 待ちすぎ → すぐ再送
       await new Promise(function (r) { setTimeout(r, 800 * (attempt + 1)); });
     }
   }
+  if (!lastErr.server) lastErr.message = lastErr.timeout ? 'サーバーの応答が遅れています。少し待ってから画面を開き直し、保存されたかを確認してください（同じ操作をもう一度しても二重には登録されません）' : '通信に失敗しました。電波の良い場所でもう一度お試しください（保存されていない可能性があります）';
   throw lastErr;
 }
 
-// 二重クリック防止: 実行中はボタンを無効化
-async function guarded(btn, fn) {
+// 二重クリック防止: 実行中はボタンを無効化し、処理中の表示を出す。onError を渡すとトーストの代わりにそちらで表示
+async function guarded(btn, fn, onError) {
   if (state.busy) return;
-  state.busy = true; if (btn) btn.disabled = true;
+  state.busy = true; if (btn) { btn.disabled = true; btn.setAttribute('aria-busy', 'true'); }
   try { await fn(); } catch (e) {
-    toast(e.message || '通信に失敗しました。保存されていない可能性があります', true);
+    if (onError) onError(e); else toast(e.message || '通信に失敗しました。保存されていない可能性があります', true);
     if (OTP_HINT[e.code] && !$('authView').classList.contains('hidden')) otpStatus(e.message + ' ' + OTP_HINT[e.code], true);
   }
-  finally { state.busy = false; if (btn) btn.disabled = false; }
+  finally { state.busy = false; if (btn) { btn.disabled = false; btn.removeAttribute('aria-busy'); } if (state.home) updateShiftStatus(); }
 }
+
+// ---------- モーダル（Esc で閉じる・開く前の要素へフォーカスを戻す・背景はスクロールしない） ----------
+function openSheet(d, trigger, focusEl) {
+  d._trigger = trigger || document.activeElement;
+  if (d.showModal) d.showModal(); else d.setAttribute('open', '');
+  document.body.classList.add('modal-open');
+  if (focusEl) setTimeout(function () { focusEl.focus(); }, 30);
+}
+document.querySelectorAll('dialog.sheet').forEach(function (d) {
+  d.addEventListener('close', function () {
+    document.body.classList.remove('modal-open');
+    if (d._trigger && document.contains(d._trigger) && d._trigger.focus) d._trigger.focus();
+    if (d.onclosed) d.onclosed();
+  });
+  d.addEventListener('click', function (ev) { if (ev.target === d) d.close(); }); // 背景を押したら閉じる
+  d.querySelectorAll('[data-close]').forEach(function (b) { b.addEventListener('click', function () { d.close(); }); });
+});
 
 // ---------- 認証 ----------
 // 既定はメール＋パスワード。招待（初回登録）と、パスワード未設定・忘れたときは認証コード
@@ -264,7 +839,9 @@ function authMode(mode) {
   otpStatus('');
 }
 function showAuth() {
+  stopLiveTimer();
   $('appView').classList.add('hidden'); $('authView').classList.remove('hidden'); $('logoutBtn').classList.add('hidden'); $('who').textContent = '';
+  document.body.classList.remove('tab-shift');
   if (state.invite) { $('authTitle').textContent = 'マイページ登録'; $('authLead').textContent = '招待メールを受け取ったメールアドレスを入力してください。'; authMode('otp'); }
   else { $('authTitle').textContent = 'ログイン'; authMode('password'); }
 }
@@ -278,15 +855,16 @@ $('pwForm').addEventListener('submit', function (ev) {
     await refresh(); showApp(); toast('ログインしました');
   });
 });
-async function savePassword(btn, input) {
-  await guarded(btn, async function () {
+// 初回のパスワード設定（認証コードでログインした直後のカード）
+$('pwSave').addEventListener('click', function (ev) {
+  var input = $('pwNew');
+  guarded(ev.currentTarget, async function () {
     await api('auth.setPassword', { password: input.value });
     input.value = ''; $('pwSetCard').classList.add('hidden');
-    await refresh(); toast('パスワードを設定しました。次回からメールアドレスとパスワードでログインできます');
+    state.home.me.has_password = true; renderPw(state.home);
+    toast('パスワードを設定しました。次回からメールアドレスとパスワードでログインできます');
   });
-}
-$('pwSave').addEventListener('click', function (ev) { savePassword(ev.currentTarget, $('pwNew')); });
-$('pwSave2').addEventListener('click', function (ev) { savePassword(ev.currentTarget, $('pwNew2')); });
+});
 $('pwLater').addEventListener('click', function () { $('pwSetCard').classList.add('hidden'); });
 
 var OTP_HINT = {
@@ -298,19 +876,20 @@ var OTP_HINT = {
   INVITE_INVALID: '招待リンクが無効です。管理者に再発行を依頼してください。', INVITE_EXPIRED: '招待リンクの期限が切れています。管理者に再発行を依頼してください。'
 };
 function otpStatus(text, ng) { var p = $('otpStatus'); p.textContent = text || ''; p.style.color = ng ? 'var(--ng)' : ''; }
-var resendTimer = null;
-function startResendCountdown(sec) {
-  var btn = $('resendBtn'); var left = sec || 60;
-  clearInterval(resendTimer); btn.disabled = true;
+// 再送ボタンの待ち時間（ログインとパスワード変更で共用）
+function countdown(btn, sec, label) {
+  var left = sec || 60;
+  clearInterval(btn._timer); btn.disabled = true;
   var tick = function () {
-    if (left <= 0) { clearInterval(resendTimer); btn.disabled = false; btn.textContent = '認証コードを再送する'; return; }
+    if (left <= 0) { clearInterval(btn._timer); btn.disabled = false; btn.textContent = label; return; }
     btn.textContent = '再送できるまで ' + left + ' 秒'; left--;
   };
-  tick(); resendTimer = setInterval(tick, 1000);
+  tick(); btn._timer = setInterval(tick, 1000);
 }
+function startResendCountdown(sec) { countdown($('resendBtn'), sec, '認証コードを再送する'); }
 async function sendCode(btn, isResend) {
   if (state.busy) return;
-  state.busy = true; if (btn) btn.disabled = true;
+  state.busy = true; if (btn) { btn.disabled = true; btn.setAttribute('aria-busy', 'true'); }
   otpStatus(isResend ? '再送しています…' : '認証コードを送信しています…');
   try {
     var r = state.invite ? await api('auth.redeemInvite', { invite_token: state.invite, email: state.email }) : await api('auth.requestLogin', { email: state.email });
@@ -321,11 +900,11 @@ async function sendCode(btn, isResend) {
   } catch (e) {
     otpStatus((e.message || '通信に失敗しました') + ' ' + (OTP_HINT[e.code] || '通信状態を確認して、もう一度お試しください。'), true);
     if (btn && btn.id === 'resendBtn') startResendCountdown(10); else if (btn) btn.disabled = false;
-  } finally { state.busy = false; if (btn && btn.id !== 'resendBtn') btn.disabled = false; }
+  } finally { state.busy = false; if (btn) btn.removeAttribute('aria-busy'); if (btn && btn.id !== 'resendBtn') btn.disabled = false; }
 }
 $('emailForm').addEventListener('submit', function (ev) { ev.preventDefault(); state.email = $('email').value.trim(); sendCode(ev.submitter, false); });
 $('resendBtn').addEventListener('click', function (ev) { sendCode(ev.currentTarget, true); });
-$('backToEmail').addEventListener('click', function () { clearInterval(resendTimer); otpStatus(''); $('codeForm').classList.add('hidden'); $('emailForm').classList.remove('hidden'); });
+$('backToEmail').addEventListener('click', function () { clearInterval($('resendBtn')._timer); otpStatus(''); $('codeForm').classList.add('hidden'); $('emailForm').classList.remove('hidden'); });
 $('codeForm').addEventListener('submit', function (ev) {
   ev.preventDefault();
   otpStatus('');
@@ -340,18 +919,26 @@ $('codeForm').addEventListener('submit', function (ev) {
   });
 });
 
+function clearDrafts() {
+  try { Object.keys(localStorage).forEach(function (k) { if (k.indexOf(DRAFT_PREFIX) === 0) localStorage.removeItem(k); }); } catch (e) {}
+}
 function logout(silent) {
   var t = state.token;
-  state.token = null; store(TOKEN_KEY, null); stopHeartbeat();
+  state.token = null; store(TOKEN_KEY, null); stopHeartbeat(); clearDrafts();
+  document.querySelectorAll('dialog[open]').forEach(function (d) { d.close(); });
+  $('periodSel').dataset.sig = ''; state.home = null;
   if (t && !silent) { fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'auth.logout', token: t, request_id: uuid() }) }).catch(function () {}); }
   showAuth();
   if (silent) toast('ログインの有効期限が切れました。もう一度ログインしてください', true);
 }
-$('logoutBtn').addEventListener('click', function () { logout(false); });
+$('logoutBtn').addEventListener('click', function () {
+  if (isShiftDirty() && !confirm('シフトの未提出の入力があります。ログアウトすると消えます。ログアウトしますか？')) return;
+  logout(false);
+});
 
 // ---------- 画面 ----------
 function showApp() {
-  $('authView').classList.add('hidden'); $('appView').classList.remove('hidden'); $('logoutBtn').classList.remove('hidden');
+  $('authView').classList.add('hidden'); $('appView').classList.remove('hidden'); $('logoutBtn').classList.remove('hidden'); $('loading').classList.add('hidden');
   route();
 }
 
@@ -360,32 +947,76 @@ function route() {
   if (['call', 'shift', 'attend', 'stats'].indexOf(tab) < 0) tab = 'call';
   document.querySelectorAll('[data-panel]').forEach(function (p) { p.classList.toggle('hidden', p.getAttribute('data-panel') !== tab); });
   document.querySelectorAll('nav.tabs a').forEach(function (a) { if (a.getAttribute('data-tab') === tab) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+  document.body.classList.toggle('tab-shift', tab === 'shift' && !$('appView').classList.contains('hidden'));
 }
 window.addEventListener('hashchange', route); // 戻る操作はタブ移動のみ（データ送信しない）
+
+// キーボード表示中（文字入力欄にフォーカス）は下部ナビ・固定バーを隠し、入力欄を画面の中央へ
+var TYPING = 'input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=hidden]), textarea';
+document.addEventListener('focusin', function (ev) {
+  if (!ev.target.matches || !ev.target.matches(TYPING)) return;
+  document.body.classList.add('kb-open');
+  if (window.matchMedia('(pointer: coarse)').matches && !ev.target.closest('dialog')) setTimeout(function () { ev.target.scrollIntoView({ block: 'center', behavior: 'smooth' }); }, 250);
+});
+document.addEventListener('focusout', function () {
+  setTimeout(function () { var a = document.activeElement; if (!a || !a.matches || !a.matches(TYPING)) document.body.classList.remove('kb-open'); }, 60);
+});
 
 async function refresh() {
   state.home = await api('me.home', {});
   render();
 }
 
-var LABELS = { WORKED: ['出勤', 'ok'], MISSING_PUNCH: ['打刻漏れ（確認中）', 'warn'], ABSENT: ['欠勤', 'ng'], PAID_LEAVE: ['有給', 'ok'], REQUESTED_OFF: ['希望休', ''], NOT_SUBMITTED: ['未提出', 'warn'], NO_SHIFT: ['シフトなし', ''] };
+function pnameOf(id) { var p = (state.home.projects || []).filter(function (x) { return x.project_id === id; })[0]; return p ? p.project_name : id; }
+function todayRecord() {
+  var h = state.home; var d = h.attendance.filter(function (x) { return x.date === h.today; })[0];
+  var recs = d ? d.records.filter(function (r) { return r.status !== 'PENDING_APPROVAL'; }) : [];
+  return recs[recs.length - 1] || null;
+}
+
+// 今日の状態: 未出勤 → 勤務中 → 架電中 → 勤務中（架電終了）→ 退勤済み
+function renderToday() {
+  var h = state.home; var rec = todayRecord(); var cur = h.session;
+  var conf = h.shifts.filter(function (s) { return s.date === h.today && s.stage === 'CONFIRMED'; })[0];
+  var dt = new Date(h.today + 'T00:00:00+09:00');
+  $('todayDate').textContent = dt.toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'long', day: 'numeric', weekday: 'short' });
+  var shiftText = conf ? (conf.kind === 'PAID_LEAVE' ? '本日は有給です' : '本日のシフト ' + conf.start + '〜' + conf.end) : '本日の確定シフトはありません';
+  var inT = rec && rec.clock_in, outT = rec && rec.clock_out;
+  var phase = outT ? 'done' : cur ? 'calling' : inT ? 'working' : 'before';
+  $('todayHeadline').textContent = { before: '出勤前です', working: '勤務中', calling: '架電中', done: '退勤済み' }[phase];
+  $('todaySub').textContent = shiftText + (cur ? ' ・ ' + labelOf(cur.operator_id) + ' / ' + pnameOf(cur.project_id) : '');
+  var set = function (id, cls, t) { $(id).className = 'step ' + cls; $(id + 'T').textContent = t; };
+  set('stepIn', inT ? 'done' : 'now', inT ? inT + ' 済' : '未');
+  set('stepCall', cur ? 'now' : '', cur ? jstTime(cur.start_at) + '〜' : (inT && !outT ? '回線を選んで開始' : '開始〜終了'));
+  set('stepOut', outT ? 'done' : (inT && !cur ? 'now' : ''), outT ? outT + ' 済' : '未');
+  var box = $('todayActions'); clear(box);
+  var go = function (text, hash, cls) { var b = el('button', text, cls || ''); b.type = 'button'; b.addEventListener('click', function () { location.hash = hash; window.scrollTo({ top: 0 }); }); box.appendChild(b); };
+  if (phase === 'before') { var pb = el('button', '出勤する'); pb.type = 'button'; pb.addEventListener('click', function (ev) { punch(ev.currentTarget, 'in'); }); box.appendChild(pb); go('シフトを見る', '#shift', 'secondary'); }
+  else if (phase === 'working') { go('架電を始める', '#call'); go('退勤する', '#attend', 'secondary'); }
+  else if (phase === 'calling') { go('実績を見る', '#stats'); go('勤怠を見る', '#attend', 'secondary'); }
+  else { go('実績を見る', '#stats'); go('勤怠を見る', '#attend', 'secondary'); }
+}
 
 function render() {
   var h = state.home; if (!h) return;
   $('who').textContent = h.me.display_name + ' さん';
+  renderToday();
   // 架電
   var projSel = $('projectSel'); var keep = projSel.value; clear(projSel);
   h.projects.forEach(function (p) { var o = el('option', p.project_name); o.value = p.project_id; projSel.appendChild(o); });
   if (h.session) projSel.value = h.session.project_id; else if (keep) projSel.value = keep;
   var cur = h.session;
-  var pname = function (id) { var p = h.projects.filter(function (x) { return x.project_id === id; })[0]; return p ? p.project_name : id; };
-  $('sessionNow').textContent = cur ? ('架電中: ' + labelOf(cur.operator_id) + ' / ' + pname(cur.project_id) + '（' + jstTime(cur.start_at) + '〜）') : '架電していません。案件を選び、空いている枠を押して開始します。';
+  $('sessionNow').textContent = cur ? ('架電中: ' + labelOf(cur.operator_id) + ' / ' + pnameOf(cur.project_id) + '（' + jstTime(cur.start_at) + '〜）') : '架電していません。';
+  $('liveBox').classList.toggle('hidden', !cur);
+  $('idleBox').classList.toggle('hidden', !!cur);
+  $('idleBox').textContent = '架電していません。案件を選び、空いている回線の「ここで開始」を押してから Zoom で発信してください。';
+  if (cur) startLiveTimer(cur.start_at); else stopLiveTimer();
   var grid = $('opGrid'); clear(grid);
   h.operators.forEach(function (o) {
     var box = el('div', null, 'op' + (o.mine ? ' mine' : o.busy ? ' busy' : ''));
-    box.appendChild(el('div', o.label));
+    box.appendChild(el('div', o.label, 'name'));
     if (o.zoom_extension || o.zoom_phone_number) box.appendChild(el('div', [o.zoom_extension ? '内線' + o.zoom_extension : '', o.zoom_phone_number].filter(Boolean).join(' / '), 'muted'));
-    box.appendChild(el('div', o.mine ? '自分が使用中' : o.busy ? '使用中' : '空き', 'muted'));
+    box.appendChild(el('div', o.mine ? '自分が使用中' : o.busy ? '使用中' : '空き', 'state'));
     if (!cur && !o.busy) {
       var b = el('button', 'ここで開始'); b.type = 'button';
       b.addEventListener('click', function () { startSession(b, o.operator_id, false); });
@@ -399,11 +1030,359 @@ function render() {
     }
     grid.appendChild(box);
   });
+  if (!h.operators.length) grid.appendChild(el('div', '利用できる回線がありません。管理者に確認してください', 'empty'));
   $('endBtn').classList.toggle('hidden', !cur);
   $('switchBtn').classList.toggle('hidden', !cur);
   if (cur) startHeartbeat(); else stopHeartbeat();
   // シフト
   renderPeriods(h);
+  renderMyShifts(h);
+  // 勤怠
+  var rec = todayRecord();
+  $('punchState').textContent = !rec ? '本日はまだ出勤していません。' : rec.clock_out ? ('本日は ' + rec.clock_in + '〜' + rec.clock_out + ' で記録済みです。') : ('本日 ' + rec.clock_in + ' に出勤済みです。終わったら休憩時間を入れて退勤を押してください。');
+  renderAttend(h);
+  renderCerts(h);
+  // 実績
+  renderStats(h);
+  renderReports(h);
+  renderPw(h);
+}
+
+function labelOf(opId) { var o = (state.home.operators || []).filter(function (x) { return x.operator_id === opId; })[0]; return o ? o.label : opId; }
+function jstTime(iso) { return new Date(iso).toLocaleTimeString('ja-JP', { timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit' }); }
+
+// 架電中の経過時間（表示のみ。記録はサーバー時刻）
+function startLiveTimer(startIso) {
+  stopLiveTimer();
+  var t0 = new Date(startIso).getTime();
+  var tick = function () { var s = Math.max(0, Math.floor((Date.now() - t0) / 1000)); var hh = Math.floor(s / 3600), mm = Math.floor(s % 3600 / 60), ss = s % 60; $('liveTimer').textContent = (hh ? hh + ':' : '') + ('0' + mm).slice(-2) + ':' + ('0' + ss).slice(-2); };
+  tick(); state.liveTimer = setInterval(tick, 1000);
+}
+function stopLiveTimer() { if (state.liveTimer) { clearInterval(state.liveTimer); state.liveTimer = null; } }
+
+function startSession(btn, opId, takeover) {
+  guarded(btn, async function () {
+    await api('session.start', { operator_id: opId, project_id: $('projectSel').value, takeover: takeover });
+    await refresh(); toast('架電を開始しました。Zoom で発信してください');
+  });
+}
+$('switchBtn').addEventListener('click', function (ev) {
+  guarded(ev.currentTarget, async function () {
+    var r = await api('session.switch', { project_id: $('projectSel').value });
+    await refresh(); toast(r.idempotent ? 'すでにこの案件です' : '案件を切り替えました');
+  });
+});
+$('endBtn').addEventListener('click', function (ev) {
+  var pj = state.home && state.home.session && state.home.session.project_id;
+  guarded(ev.currentTarget, async function () {
+    await api('session.end', {}); await refresh(); toast('架電を終了しました');
+    // 終了は済んでから、営業実績の入力へ案内する（終了の操作は妨げない）
+    $('afterCall').dataset.project = pj || ''; $('afterCall').classList.remove('hidden');
+  });
+});
+$('afterCallGo').addEventListener('click', function (ev) { $('afterCall').classList.add('hidden'); location.hash = '#stats'; openReport(ev.currentTarget, { project_id: $('afterCall').dataset.project }); });
+$('afterCallLater').addEventListener('click', function () { $('afterCall').classList.add('hidden'); });
+
+function startHeartbeat() {
+  if (state.hbTimer) return;
+  state.hbTimer = setInterval(sendHeartbeat, 60000);
+}
+function stopHeartbeat() { if (state.hbTimer) { clearInterval(state.hbTimer); state.hbTimer = null; } }
+async function sendHeartbeat() {
+  try { await api('session.heartbeat', {}); }
+  catch (e) { if (e.code === 'NO_OPEN_SESSION') { stopHeartbeat(); toast('セッションが自動終了していました。必要なら開始し直してください', true); refresh().catch(function () {}); } }
+}
+document.addEventListener('visibilitychange', function () { if (!document.hidden && state.token) { if (state.hbTimer) sendHeartbeat(); refresh().catch(function () {}); } });
+
+// ---------- シフト ----------
+var JP_HOLIDAYS = {
+  '2026-01-01': '元日', '2026-01-12': '成人の日', '2026-02-11': '建国記念の日', '2026-02-23': '天皇誕生日', '2026-03-20': '春分の日',
+  '2026-04-29': '昭和の日', '2026-05-03': '憲法記念日', '2026-05-04': 'みどりの日', '2026-05-05': 'こどもの日', '2026-05-06': '振替休日',
+  '2026-07-20': '海の日', '2026-08-11': '山の日', '2026-09-21': '敬老の日', '2026-09-22': '国民の休日', '2026-09-23': '秋分の日',
+  '2026-10-12': 'スポーツの日', '2026-11-03': '文化の日', '2026-11-23': '勤労感謝の日',
+  '2027-01-01': '元日', '2027-01-11': '成人の日', '2027-02-11': '建国記念の日', '2027-02-23': '天皇誕生日', '2027-03-21': '春分の日',
+  '2027-03-22': '振替休日', '2027-04-29': '昭和の日', '2027-05-03': '憲法記念日', '2027-05-04': 'みどりの日', '2027-05-05': 'こどもの日',
+  '2027-07-19': '海の日', '2027-08-11': '山の日', '2027-09-20': '敬老の日', '2027-09-23': '秋分の日', '2027-10-11': 'スポーツの日',
+  '2027-11-03': '文化の日', '2027-11-23': '勤労感謝の日'
+};
+function dowOf(d) { return new Date(d + 'T00:00:00Z').getUTCDay(); }
+function dayText(d) { return d.slice(5).replace('-', '/') + '（' + '日月火水木金土'[dowOf(d)] + '）'; }
+// 日付の表示（MM/DD（曜）・土=青・日祝=赤・祝日名）
+function dayCell(d, withName) {
+  var dow = dowOf(d);
+  var hol = JP_HOLIDAYS[d];
+  var cls = hol ? 'd-hol' : dow === 0 ? 'd-sun' : dow === 6 ? 'd-sat' : '';
+  var box = el('span', dayText(d), cls);
+  if (hol && withName) box.appendChild(el('span', hol, 'hol-name'));
+  return { node: box, cls: cls };
+}
+function periodLabel(k) { var m = +k.slice(5, 7); return k.slice(0, 4) + '年' + m + '月' + (k.slice(-1) === 'A' ? '前半（1〜15日）' : '後半（16日〜末日）'); }
+function datesOf(k) {
+  var y = +k.slice(0, 4), m = +k.slice(5, 7), a = k.slice(-1) === 'A';
+  var last = new Date(Date.UTC(y, m, 0)).getUTCDate(); var out = [];
+  for (var d = a ? 1 : 16; d <= (a ? 15 : last); d++) out.push(k.slice(0, 7) + '-' + ('0' + d).slice(-2));
+  return out;
+}
+function periodList(h) {
+  if (h.periods.list && h.periods.list.length) return h.periods.list.slice().sort(function (a, b) { return a.key < b.key ? -1 : 1; });
+  return [{ key: h.periods.current, deadline: h.periods.current_deadline || null }, { key: h.periods.next, deadline: h.periods.next_deadline }];
+}
+function periodInfo(k) { return periodList(state.home).filter(function (p) { return p.key === k; })[0] || { key: k, deadline: null }; }
+// 締切を過ぎた期間は入力できない（今期は締切の情報が無くても終了扱い）
+function isClosed(k) { var p = periodInfo(k); return p.deadline ? Date.now() > Date.parse(p.deadline) : k === state.home.periods.current; }
+function fmtDeadline(iso) { return new Date(iso).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit' }); }
+
+var shiftUI = { period: null, saved: {}, savedNote: '', confirmRid: null, payload: null };
+
+function renderPeriods(h) {
+  var sel = $('periodSel'); var list = periodList(h);
+  var sig = list.map(function (p) { return p.key + (isClosed(p.key) ? 'x' : 'o'); }).join(',');
+  if (sel.dataset.sig !== sig) {
+    var keep = sel.value; clear(sel);
+    list.forEach(function (p) { var o = el('option', periodLabel(p.key) + (isClosed(p.key) ? '（受付終了）' : '')); o.value = p.key; sel.appendChild(o); });
+    sel.dataset.sig = sig;
+    var open = list.filter(function (p) { return !isClosed(p.key); })[0];
+    sel.value = list.some(function (p) { return p.key === keep; }) ? keep : (open ? open.key : h.periods.next);
+  }
+  // 未提出の入力があるときは、再読み込みで作り直さない（入力を消さない）
+  if (shiftUI.period !== sel.value || !isShiftDirty()) renderDayRows(); else updateShiftStatus();
+}
+$('periodSel').addEventListener('change', function () { renderDayRows(); });
+
+function timeOptions(sel, val) {
+  clear(sel);
+  var vals = [];
+  for (var t = 8 * 60; t <= 21 * 60; t += 30) vals.push(('0' + Math.floor(t / 60)).slice(-2) + ':' + ('0' + t % 60).slice(-2));
+  if (val && vals.indexOf(val) < 0) { vals.push(val); vals.sort(); } // 以前の提出にある半端な時刻も残す
+  vals.forEach(function (v) { var o = el('option', v); o.value = v; sel.appendChild(o); });
+  sel.value = val || '';
+}
+function draftKey(k) { return DRAFT_PREFIX + k; }
+function loadDraft(k) { try { var s = load(draftKey(k)); return s ? JSON.parse(s) : null; } catch (e) { return null; } }
+
+function rowValue(row) {
+  var k = row.dataset.kind;
+  if (k === 'WORK') { var s = row.querySelectorAll('.times select'); return { kind: 'WORK', start: s[0].value, end: s[1].value }; }
+  return k === 'OFF' ? { kind: 'OFF' } : { kind: '' };
+}
+function sameValue(a, b) {
+  a = a || { kind: '' }; b = b || { kind: '' };
+  if ((a.kind || '') !== (b.kind || '')) return false;
+  return a.kind !== 'WORK' || (a.start === b.start && a.end === b.end);
+}
+function dayRowEls() { return Array.prototype.slice.call(document.querySelectorAll('#dayRows .day')); }
+function isShiftDirty() {
+  if (!state.home || !shiftUI.period) return false;
+  var changed = dayRowEls().some(function (r) { return !sameValue(rowValue(r), shiftUI.saved[r.dataset.date]); });
+  return changed || $('shiftNote').value !== shiftUI.savedNote;
+}
+
+function setKind(row, kind) {
+  row.dataset.kind = kind;
+  row.classList.remove('st-WORK', 'st-OFF', 'st-');
+  row.classList.add('st-' + kind);
+  row.querySelectorAll('.kind button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.k === kind)); });
+  row.querySelector('.state-text').textContent = kind === '' ? '未選択' : '';
+}
+
+function renderDayRows() {
+  var h = state.home, k = $('periodSel').value; shiftUI.period = k;
+  var closed = isClosed(k);
+  var saved = {}, conf = {}, savedNote = '';
+  h.shifts.forEach(function (s) {
+    if (s.period_key !== k) return;
+    if (s.stage === 'REQUEST') { if (s.date) saved[s.date] = { kind: s.kind, start: s.start || '', end: s.end || '' }; savedNote = s.note || savedNote; }
+    if (s.stage === 'CONFIRMED') conf[s.date] = s;
+  });
+  shiftUI.saved = saved; shiftUI.savedNote = savedNote;
+  var draft = closed ? null : loadDraft(k);
+  var init = draft ? draft.days : saved;
+  var box = $('dayRows'); clear(box);
+  datesOf(k).forEach(function (d) {
+    var dc = dayCell(d, true);
+    var row = el('div', null, 'day' + (dc.cls ? ' day-mark' : '')); row.dataset.date = d;
+    var pick = el('label', null, 'pick'); var cb = el('input'); cb.type = 'checkbox'; cb.setAttribute('aria-label', dayText(d) + ' を選択'); cb.addEventListener('change', updateBulkPreview); pick.appendChild(cb); row.appendChild(pick);
+    var dcell = el('div', null, 'dcell'); dcell.appendChild(dc.node);
+    var c = conf[d];
+    if (c) { dcell.appendChild(el('br')); dcell.appendChild(el('span', c.kind === 'PAID_LEAVE' ? '確定 有給' : '確定 ' + c.start + '〜' + c.end, 'chip ok')); }
+    row.appendChild(dcell);
+    var kw = el('div', null, 'kind-wrap');
+    var grp = el('div', null, 'kind'); grp.setAttribute('role', 'group'); grp.setAttribute('aria-label', dayText(d) + ' の希望');
+    [['WORK', '出勤可'], ['OFF', '希望休']].forEach(function (p) {
+      var b = el('button', p[1]); b.type = 'button'; b.dataset.k = p[0]; b.disabled = closed;
+      b.addEventListener('click', function () { setKind(row, row.dataset.kind === p[0] ? '' : p[0]); onShiftChanged(row); }); // もう一度押すと未選択に戻る
+      grp.appendChild(b);
+    });
+    kw.appendChild(grp); kw.appendChild(el('span', '', 'state-text')); row.appendChild(kw);
+    var v = init[d] || { kind: '' };
+    var times = el('div', null, 'times');
+    var st = el('select'), en = el('select');
+    timeOptions(st, v.kind === 'WORK' && v.start || '10:00'); timeOptions(en, v.kind === 'WORK' && v.end || '17:00');
+    st.setAttribute('aria-label', dayText(d) + ' の開始'); en.setAttribute('aria-label', dayText(d) + ' の終了');
+    st.disabled = en.disabled = closed;
+    [st, en].forEach(function (s) { s.addEventListener('change', function () { onShiftChanged(row); }); });
+    times.appendChild(st); times.appendChild(el('span', '〜', 'muted')); times.appendChild(en);
+    row.appendChild(times);
+    var err = el('p', '', 'ferr'); err.hidden = true; err.id = 'err-' + d; row.appendChild(err);
+    setKind(row, v.kind || '');
+    box.appendChild(row);
+  });
+  $('shiftNote').value = draft ? (draft.note || '') : savedNote;
+  $('shiftNote').disabled = closed;
+  $('draftNotice').classList.toggle('hidden', !draft);
+  // 締切
+  var p = periodInfo(k);
+  $('deadlineNote').textContent = p.deadline ? '提出期限 ' + fmtDeadline(p.deadline) + (closed ? '' : '（期限前なら何度でも出し直せます）') : '';
+  var badge = $('periodBadge'); clear(badge);
+  badge.appendChild(closed ? mkBadge('受付終了', 'mute', 'i-lock') : mkBadge('受付中', 'ok', 'i-check'));
+  $('bulkPanel').classList.toggle('hidden', closed);
+  if (closed) {
+    var n = $('draftNotice'); n.classList.remove('hidden', 'info');
+    $('draftText').textContent = '提出期限を過ぎているため、この期間は変更できません。変更が必要なときは管理者に連絡してください。';
+    $('draftDiscard').classList.add('hidden');
+  } else { $('draftNotice').classList.add('info'); $('draftDiscard').classList.remove('hidden'); $('draftText').textContent = '前回の未提出の入力を、この端末から復元しました（まだ提出していません）。'; }
+  dayRowEls().forEach(markChanged);
+  updateBulkPreview();
+  updateShiftStatus();
+}
+
+function markChanged(row) { row.classList.toggle('changed', !sameValue(rowValue(row), shiftUI.saved[row.dataset.date])); }
+function validateRow(row) {
+  var v = rowValue(row); var err = row.querySelector('.ferr'); var sels = row.querySelectorAll('.times select');
+  var bad = v.kind === 'WORK' && v.start >= v.end;
+  err.textContent = bad ? '終了時刻は開始時刻より後にしてください' : ''; err.hidden = !bad;
+  sels.forEach(function (s) { s.classList.toggle('invalid', bad); if (bad) { s.setAttribute('aria-invalid', 'true'); s.setAttribute('aria-describedby', err.id); } else s.removeAttribute('aria-invalid'); });
+  return !bad;
+}
+function onShiftChanged(row) {
+  if (row) { validateRow(row); markChanged(row); }
+  saveDraft(); updateBulkPreview(); updateShiftStatus();
+}
+$('shiftNote').addEventListener('input', function () { saveDraft(); updateShiftStatus(); });
+function saveDraft() {
+  var k = shiftUI.period; if (!k || isClosed(k)) return;
+  if (!isShiftDirty()) { store(draftKey(k), null); return; }
+  var days = {}; dayRowEls().forEach(function (r) { var v = rowValue(r); if (v.kind) days[r.dataset.date] = v; });
+  store(draftKey(k), JSON.stringify({ days: days, note: $('shiftNote').value, at: Date.now() }));
+}
+$('draftDiscard').addEventListener('click', function () {
+  store(draftKey(shiftUI.period), null); shiftUI.period = null; renderDayRows();
+  toast('下書きを破棄し、提出済みの内容に戻しました');
+});
+
+function shiftCounts() {
+  var c = { WORK: 0, OFF: 0, none: 0, total: 0 };
+  dayRowEls().forEach(function (r) { c.total++; if (r.dataset.kind) c[r.dataset.kind]++; else c.none++; });
+  return c;
+}
+function mkBadge(text, tone, ic) { var b = el('span', null, 'badge ' + (tone || '')); if (ic) b.appendChild(icon(ic)); b.appendChild(document.createTextNode(text)); return b; }
+function updateShiftStatus() {
+  if (!state.home || !shiftUI.period) return;
+  var c = shiftCounts(), k = shiftUI.period, closed = isClosed(k), dirty = isShiftDirty();
+  var ver = periodInfo(k).submitted_version || 0;
+  var filled = c.WORK + c.OFF;
+  $('shiftCount').innerHTML = '';
+  $('shiftCount').appendChild(document.createTextNode('入力済み '));
+  $('shiftCount').appendChild(el('b', filled));
+  $('shiftCount').appendChild(document.createTextNode(' / ' + c.total + '日'));
+  $('shiftBar').style.width = c.total ? Math.round(filled / c.total * 100) + '%' : '0';
+  var sub = $('shiftSub');
+  sub.className = 'sub' + (dirty && !closed ? ' dirty' : '');
+  sub.textContent = closed ? '受付終了（変更は管理者へ）' : dirty ? '● 未提出の変更があります' : ver ? '第' + ver + '版を提出済み・変更なし' : 'まだ提出していません';
+  var lg = $('shiftLegend'); clear(lg);
+  lg.appendChild(mkBadge('出勤可 ' + c.WORK, 'ok', 'i-check'));
+  lg.appendChild(mkBadge('希望休 ' + c.OFF, 'mute', 'i-minus'));
+  lg.appendChild(mkBadge('未選択 ' + c.none, c.none ? 'warn' : 'mute', 'i-alert'));
+  var btn = $('shiftSubmit');
+  if (btn.getAttribute('aria-busy') !== 'true') {
+    btn.disabled = closed || state.busy || (!!ver && !dirty);
+    btn.textContent = closed ? '受付終了' : ver && !dirty ? '提出済み' : ver ? '再提出する' : '提出する';
+  }
+}
+
+// 一括入力: 対象の日を明示し、既定では入力済みの日は上書きしない
+function bulkTargetRows() {
+  var t = (document.querySelector('input[name=bulkTarget]:checked') || {}).value;
+  return dayRowEls().filter(function (r) {
+    var d = r.dataset.date, dow = dowOf(d);
+    if (t === 'weekday') return dow >= 1 && dow <= 5 && !JP_HOLIDAYS[d];
+    if (t === 'picked') return r.querySelector('.pick input').checked;
+    return true;
+  });
+}
+function updateBulkPreview() {
+  if (!shiftUI.period) return;
+  var t = (document.querySelector('input[name=bulkTarget]:checked') || {}).value;
+  $('dayRows').classList.toggle('picking', t === 'picked');
+  var rows = bulkTargetRows(), over = $('bulkOverwrite').checked;
+  var empty = rows.filter(function (r) { return !r.dataset.kind; }), filled = rows.length - empty.length;
+  var apply = over ? rows.length : empty.length;
+  var s = $('bulkStart').value, e = $('bulkEnd').value, bad = s >= e;
+  fieldErr($('bulkEnd'), bad ? '終了時刻は開始時刻より後にしてください' : '');
+  var p = $('bulkPreview'); clear(p);
+  if (t === 'picked' && !rows.length) p.appendChild(document.createTextNode('下の一覧で、適用する日にチェックを入れてください。'));
+  else {
+    p.appendChild(document.createTextNode('対象 ' + rows.length + '日のうち '));
+    p.appendChild(el('b', apply + '日'));
+    p.appendChild(document.createTextNode(' を「出勤可 ' + s + '〜' + e + '」にします。'));
+    if (filled) p.appendChild(document.createTextNode(over ? '入力済みの ' + filled + '日も上書きします。' : '入力済みの ' + filled + '日はそのままです。'));
+  }
+  $('bulkApply').disabled = bad || !apply || isClosed(shiftUI.period);
+}
+document.querySelectorAll('input[name=bulkTarget]').forEach(function (r) { r.addEventListener('change', updateBulkPreview); });
+$('bulkOverwrite').addEventListener('change', updateBulkPreview);
+['bulkStart', 'bulkEnd'].forEach(function (id) { $(id).addEventListener('change', updateBulkPreview); });
+timeOptions($('bulkStart'), '10:00'); timeOptions($('bulkEnd'), '17:00');
+$('bulkApply').addEventListener('click', function () {
+  var over = $('bulkOverwrite').checked, s = $('bulkStart').value, e = $('bulkEnd').value;
+  var rows = bulkTargetRows().filter(function (r) { return over || !r.dataset.kind; });
+  rows.forEach(function (r) {
+    setKind(r, 'WORK');
+    var sels = r.querySelectorAll('.times select'); timeOptions(sels[0], s); timeOptions(sels[1], e);
+    validateRow(r); markChanged(r);
+    r.classList.add('flash'); setTimeout(function () { r.classList.remove('flash'); }, 900);
+  });
+  document.querySelectorAll('#dayRows .pick input').forEach(function (c) { c.checked = false; });
+  onShiftChanged(null);
+  toast(rows.length + '日に ' + s + '〜' + e + ' を入れました（まだ提出していません）');
+});
+
+$('shiftSubmit').addEventListener('click', function (ev) {
+  var k = shiftUI.period; if (!k || isClosed(k)) return;
+  var bad = dayRowEls().filter(function (r) { return !validateRow(r); });
+  if (bad.length) {
+    bad[0].scrollIntoView({ block: 'center' }); bad[0].querySelector('.times select').focus();
+    toast(dayText(bad[0].dataset.date) + ' の終了時刻が開始時刻より前です', true); return;
+  }
+  var days = [], list = $('scList'); clear(list);
+  dayRowEls().forEach(function (r) {
+    var v = rowValue(r); if (!v.kind) return;
+    days.push(v.kind === 'WORK' ? { date: r.dataset.date, kind: 'WORK', start: v.start, end: v.end } : { date: r.dataset.date, kind: 'OFF' });
+    var line = el('div'); line.appendChild(dayCell(r.dataset.date, false).node); line.appendChild(el('span', v.kind === 'WORK' ? '出勤可 ' + v.start + '〜' + v.end : '希望休'));
+    list.appendChild(line);
+  });
+  if (!days.length) list.appendChild(el('div', '出勤できる日がない期間として提出します'));
+  var c = shiftCounts();
+  $('scPeriod').textContent = periodLabel(k);
+  var cc = $('scCounts'); clear(cc);
+  cc.appendChild(mkBadge('出勤可 ' + c.WORK + '日', 'ok', 'i-check')); cc.appendChild(mkBadge('希望休 ' + c.OFF + '日', 'mute', 'i-minus')); cc.appendChild(mkBadge('未選択 ' + c.none + '日', c.none ? 'warn' : 'mute', 'i-alert'));
+  $('scNote').textContent = $('shiftNote').value ? '備考: ' + $('shiftNote').value : '';
+  shiftUI.payload = { period_key: k, days: days, note: $('shiftNote').value };
+  shiftUI.confirmRid = uuid(); // 確認画面ごとに1つ。二度押し・再送でも二重提出にならない
+  openSheet($('shiftConfirm'), ev.currentTarget, $('shiftConfirmOk'));
+});
+$('shiftConfirmOk').addEventListener('click', function (ev) {
+  var p = shiftUI.payload; if (!p) return;
+  guarded(ev.currentTarget, async function () {
+    var r = await api('shift.submit', p, { requestId: shiftUI.confirmRid });
+    store(draftKey(p.period_key), null);
+    $('shiftConfirm').close(); shiftUI.payload = null;
+    state.home = await api('me.home', {}); shiftUI.period = null; render();
+    toast('提出しました（第' + r.version + '版・保存を確認済み）');
+  });
+});
+
+function renderMyShifts(h) {
   var ms = $('myShifts'); clear(ms);
   var byDate = {};
   h.shifts.forEach(function (s) { var g = byDate[s.date] = byDate[s.date] || {}; if (s.stage === 'CONFIRMED') g.conf = s; else g.req = s; });
@@ -418,139 +1397,470 @@ function render() {
     tr.appendChild(ctd); ms.appendChild(tr);
   });
   if (!h.shifts.length) { var tr0 = el('tr'); var td0 = el('td', 'まだありません', 'muted'); td0.colSpan = 3; tr0.appendChild(td0); ms.appendChild(tr0); }
-  // 勤怠
-  var ma = $('myAttend'); clear(ma);
-  h.attendance.slice().reverse().forEach(function (d) {
-    var tr = el('tr'); var dtd = el('td'); dtd.appendChild(dayCell(d.date, false).node); tr.appendChild(dtd);
-    var lb = LABELS[d.label] || [d.label, '']; var td = el('td'); td.appendChild(el('span', lb[0], 'chip ' + lb[1]));
-    if (d.late) td.appendChild(el('span', ' 遅刻候補', 'chip warn'));
-    tr.appendChild(td);
-    tr.appendChild(el('td', d.records.map(function (r) { return (r.clock_in || '--') + '〜' + (r.clock_out || '--') + (r.status === 'PENDING_APPROVAL' ? '（申請中）' : ''); }).join(' / ')));
-    tr.appendChild(el('td', d.hours ? d.hours + 'h' : '')); ma.appendChild(tr);
-  });
-  // 実績
-  var pwSet = !!h.me.has_password, viaOtp = h.me.auth_method !== 'password';
-  $('pwState').textContent = (pwSet ? '設定済みです。' : 'まだ設定していません。') + (viaOtp ? '' : '変更は、ログアウトして「認証コードでログイン」からログインし直すとできます。');
-  $('pwChange').classList.toggle('hidden', !viaOtp);
-  var wm = h.work_month || {};
-  $('workMonth').textContent = '出勤 ' + (wm.worked_days || 0) + ' 日・実働 ' + (wm.hours || 0) + ' 時間（確定シフト ' + (wm.confirmed_days || 0) + ' 日）';
-  var st = $('myStats'); clear(st);
-  h.stats_month.forEach(function (r) {
-    var tr = el('tr'); [r.project_name, r.calls, r.connected, r.appts_acquired, r.session_hours].forEach(function (v) { tr.appendChild(el('td', v)); }); st.appendChild(tr);
-  });
-  if (!h.stats_month.length) { var tr1 = el('tr'); var td1 = el('td', '今月の確定した実績はまだありません', 'muted'); td1.colSpan = 5; tr1.appendChild(td1); st.appendChild(tr1); }
 }
 
-function labelOf(opId) { var o = (state.home.operators || []).filter(function (x) { return x.operator_id === opId; })[0]; return o ? o.label : opId; }
-function jstTime(iso) { return new Date(iso).toLocaleTimeString('ja-JP', { timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit' }); }
-
-function startSession(btn, opId, takeover) {
+// ---------- 勤怠 ----------
+function punch(btn, kind) {
   guarded(btn, async function () {
-    await api('session.start', { operator_id: opId, project_id: $('projectSel').value, takeover: takeover });
-    await refresh(); toast('架電を開始しました');
+    var r = await api('attendance.punch', kind === 'in' ? { kind: 'in' } : { kind: 'out', break_minutes: $('breakMin').value });
+    await refresh();
+    if (kind === 'in') toast(r.idempotent ? '本日はすでに出勤済みです' : '出勤を記録しました（' + r.attendance.clock_in + '）。架電は「架電」タブで開始します');
+    else toast('退勤を記録しました（' + r.attendance.clock_out + '）');
   });
 }
-$('switchBtn').addEventListener('click', function (ev) {
-  guarded(ev.currentTarget, async function () {
-    var r = await api('session.switch', { project_id: $('projectSel').value });
-    await refresh(); toast(r.idempotent ? 'すでにこの案件です' : '案件を切り替えました');
-  });
-});
-$('endBtn').addEventListener('click', function (ev) {
-  guarded(ev.currentTarget, async function () { await api('session.end', {}); await refresh(); toast('架電を終了しました'); });
+$('punchIn').addEventListener('click', function (ev) { punch(ev.currentTarget, 'in'); });
+$('punchOut').addEventListener('click', function (ev) {
+  if (state.home && state.home.session && !confirm('架電セッションが開いたままです。先に「架電を終了」を押すことをおすすめします。このまま退勤しますか？')) return;
+  punch(ev.currentTarget, 'out');
 });
 
-function startHeartbeat() {
-  if (state.hbTimer) return;
-  state.hbTimer = setInterval(sendHeartbeat, 60000);
+// 日ごとの状態（サーバーの判定ラベル＋記録）。未提出・打刻漏れは欠勤として出さない。欠勤は管理者が確定した日だけ
+function dayStatus(d, today) {
+  var active = d.records.filter(function (r) { return r.status === 'ACTIVE'; }).pop() || null;
+  var pend = d.records.filter(function (r) { return r.status === 'PENDING_APPROVAL'; }).pop() || null;
+  var main, extra = [], needs = false;
+  switch (d.label) {
+    case 'WORKED':
+      if (active && !active.clock_out && d.date === today) main = ['勤務中', 'ok', 'i-clock'];
+      else { main = ['出勤済み', 'ok', 'i-check']; if (active && !active.clock_out) { extra.push(['退勤打刻なし', 'warn', 'i-alert']); needs = true; } }
+      break;
+    case 'MISSING_PUNCH':
+      if (d.date === today) main = ['本日シフトあり・未出勤', 'mute', 'i-clock'];
+      else { main = ['打刻漏れ・確認待ち', 'warn', 'i-alert']; needs = true; }
+      break;
+    case 'NOT_SUBMITTED': main = ['シフト未提出', 'warn', 'i-alert']; break;
+    case 'ABSENT': main = ['欠勤（確定）', 'ng', 'i-x']; break;
+    case 'PAID_LEAVE': main = ['有給', 'mute', 'i-minus']; break;
+    case 'REQUESTED_OFF': main = ['希望休', 'mute', 'i-minus']; break;
+    case 'NO_SHIFT': main = ['シフトなし', 'mute', 'i-minus']; break;
+    default: main = [d.label || '—', 'mute', 'i-minus'];
+  }
+  if (d.late) extra.push(['遅刻候補', 'warn', 'i-alert']);
+  if (pend) { extra.unshift(main); main = ['修正申請中', 'info', 'i-sync']; needs = false; }
+  return { main: main, extra: extra, needs: needs, active: active, pend: pend };
 }
-function stopHeartbeat() { if (state.hbTimer) { clearInterval(state.hbTimer); state.hbTimer = null; } }
-async function sendHeartbeat() {
-  try { await api('session.heartbeat', {}); }
-  catch (e) { if (e.code === 'NO_OPEN_SESSION') { stopHeartbeat(); toast('セッションが自動終了していました。必要なら開始し直してください', true); refresh().catch(function () {}); } }
-}
-document.addEventListener('visibilitychange', function () { if (!document.hidden && state.token) { if (state.hbTimer) sendHeartbeat(); refresh().catch(function () {}); } });
+function mondayOf(d) { var dow = dowOf(d); var t = new Date(d + 'T00:00:00Z'); t.setUTCDate(t.getUTCDate() - ((dow + 6) % 7)); return t.toISOString().slice(0, 10); }
+function addDaysStr(d, n) { var t = new Date(d + 'T00:00:00Z'); t.setUTCDate(t.getUTCDate() + n); return t.toISOString().slice(0, 10); }
+function fmtH(x) { return (Math.round((Number(x) || 0) * 10) / 10).toString(); }
 
-// シフト入力
-var JP_HOLIDAYS = {
-  '2026-01-01': '元日', '2026-01-12': '成人の日', '2026-02-11': '建国記念の日', '2026-02-23': '天皇誕生日', '2026-03-20': '春分の日',
-  '2026-04-29': '昭和の日', '2026-05-03': '憲法記念日', '2026-05-04': 'みどりの日', '2026-05-05': 'こどもの日', '2026-05-06': '振替休日',
-  '2026-07-20': '海の日', '2026-08-11': '山の日', '2026-09-21': '敬老の日', '2026-09-22': '国民の休日', '2026-09-23': '秋分の日',
-  '2026-10-12': 'スポーツの日', '2026-11-03': '文化の日', '2026-11-23': '勤労感謝の日',
-  '2027-01-01': '元日', '2027-01-11': '成人の日', '2027-02-11': '建国記念の日', '2027-02-23': '天皇誕生日', '2027-03-21': '春分の日',
-  '2027-03-22': '振替休日', '2027-04-29': '昭和の日', '2027-05-03': '憲法記念日', '2027-05-04': 'みどりの日', '2027-05-05': 'こどもの日',
-  '2027-07-19': '海の日', '2027-08-11': '山の日', '2027-09-20': '敬老の日', '2027-09-23': '秋分の日', '2027-10-11': 'スポーツの日',
-  '2027-11-03': '文化の日', '2027-11-23': '勤労感謝の日'
-};
-// 日付の表示（MM/DD（曜）・土=青・日祝=赤・祝日名）
-function dayCell(d, withName) {
-  var dow = new Date(d + 'T00:00:00Z').getUTCDay();
-  var hol = JP_HOLIDAYS[d];
-  var cls = hol ? 'd-hol' : dow === 0 ? 'd-sun' : dow === 6 ? 'd-sat' : '';
-  var box = el('span', d.slice(5).replace('-', '/') + '（' + '日月火水木金土'[dow] + '）', cls);
-  if (hol && withName) box.appendChild(el('span', hol, 'hol-name'));
-  return { node: box, cls: cls };
-}
-function periodLabel(k) { var m = +k.slice(5, 7); return k.slice(0, 4) + '年' + m + '月' + (k.slice(-1) === 'A' ? '前半（1〜15日）' : '後半（16日〜末日）'); }
-function datesOf(k) {
-  var y = +k.slice(0, 4), m = +k.slice(5, 7), a = k.slice(-1) === 'A';
-  var last = new Date(Date.UTC(y, m, 0)).getUTCDate(); var out = [];
-  for (var d = a ? 1 : 16; d <= (a ? 15 : last); d++) out.push(k.slice(0, 7) + '-' + ('0' + d).slice(-2));
-  return out;
-}
-function renderPeriods(h) {
-  var sel = $('periodSel'); if (sel.options.length) return;
-  [h.periods.next, h.periods.current].forEach(function (k) { var o = el('option', periodLabel(k)); o.value = k; sel.appendChild(o); });
-  sel.addEventListener('change', renderDayRows); renderDayRows();
-}
-function timeSelect(val) {
-  var s = el('select');
-  for (var t = 8 * 60; t <= 21 * 60; t += 30) { var v = ('0' + Math.floor(t / 60)).slice(-2) + ':' + ('0' + t % 60).slice(-2); var o = el('option', v); o.value = v; if (v === val) o.selected = true; s.appendChild(o); }
-  return s;
-}
-function renderDayRows() {
-  var k = $('periodSel').value; var box = $('dayRows'); clear(box);
-  var dl = k === state.home.periods.next ? state.home.periods.next_deadline : null;
-  $('deadlineNote').textContent = dl ? ('提出期限: ' + new Date(dl).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit' }) + '（期限前なら何度でも修正できます）') : '';
-  var mine = {}; state.home.shifts.forEach(function (s) { if (s.stage === 'REQUEST' && s.period_key === k) mine[s.date] = s; });
-  datesOf(k).forEach(function (d) {
-    var dc = dayCell(d, true);
-    var row = el('div', null, 'day' + (dc.cls ? ' day-mark' : '')); row.dataset.date = d; // 色は日付だけ・行は背景で区別
-    var dl = el('div'); dl.appendChild(dc.node); row.appendChild(dl);
-    var times = el('div', null, 'times');
-    var kind = el('select'); [['', '—'], ['WORK', '出勤可'], ['OFF', '希望休']].forEach(function (p) { var o = el('option', p[1]); o.value = p[0]; kind.appendChild(o); });
-    var ex = mine[d]; if (ex) kind.value = ex.kind;
-    var st = timeSelect(ex && ex.start || '10:00'), en = timeSelect(ex && ex.end || '17:00');
-    var sync = function () { st.disabled = en.disabled = kind.value !== 'WORK'; }; kind.addEventListener('change', sync); sync();
-    times.appendChild(kind); times.appendChild(st); times.appendChild(el('span', '〜')); times.appendChild(en);
-    row.appendChild(times); box.appendChild(row);
+function renderAttend(h) {
+  var box = $('myAttend'); clear(box);
+  var thisMon = mondayOf(h.today);
+  var groups = {};
+  h.attendance.forEach(function (d) { var m = mondayOf(d.date); (groups[m] = groups[m] || []).push(d); });
+  Object.keys(groups).sort().reverse().forEach(function (mon, gi) {
+    var days = groups[mon].slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; });
+    var diff = Math.round((Date.parse(thisMon) - Date.parse(mon)) / (7 * 86400000));
+    var name = diff === 0 ? '今週' : diff === 1 ? '先週' : diff + '週間前';
+    var sts = days.map(function (d) { return dayStatus(d, h.today); });
+    var worked = days.filter(function (d) { return d.label === 'WORKED'; }).length;
+    var hours = days.reduce(function (s, d) { return s + (Number(d.hours) || 0); }, 0);
+    var needs = sts.filter(function (s) { return s.needs; }).length, pend = sts.filter(function (s) { return s.pend; }).length;
+    var sec = el('section', null, 'week');
+    var open = state.openWeeks[mon] !== undefined ? state.openWeeks[mon] : diff === 0;
+    var head = el('button', null, 'week-head'); head.type = 'button'; head.setAttribute('aria-expanded', String(open));
+    var bid = 'wk-' + mon; head.setAttribute('aria-controls', bid);
+    var wt = el('span', null, 'wt'); wt.appendChild(el('b', name)); wt.appendChild(el('small', dayText(mon).replace(/（.）/, '') + '〜' + dayText(addDaysStr(mon, 6)).replace(/（.）/, '')));
+    wt.appendChild(el('small', '出勤 ' + worked + '日・実働 ' + fmtH(hours) + '時間'));
+    head.appendChild(wt);
+    var ws = el('span', null, 'wsum');
+    if (needs) ws.appendChild(mkBadge('要確認 ' + needs, 'warn', 'i-alert'));
+    if (pend) ws.appendChild(mkBadge('申請中 ' + pend, 'info', 'i-sync'));
+    head.appendChild(ws); head.appendChild(icon('i-chev', 'chev'));
+    var body = el('div', null, 'week-body'); body.id = bid; body.hidden = !open;
+    head.addEventListener('click', function () { var o = head.getAttribute('aria-expanded') !== 'true'; head.setAttribute('aria-expanded', String(o)); body.hidden = !o; state.openWeeks[mon] = o; });
+    var hd = el('div', null, 'att-head'); ['日付', '状態', '出勤', '退勤', '休憩', '実働', ''].forEach(function (t, i) { hd.appendChild(el('span', t, i >= 2 && i <= 5 ? 'num' : '')); });
+    body.appendChild(hd);
+    days.forEach(function (d, i) {
+      var s = sts[i]; var rec = s.active;
+      var row = el('div', null, 'att' + (d.date === h.today ? ' is-today' : ''));
+      var dt = el('div', null, 'a-date'); dt.appendChild(dayCell(d.date, false).node); if (d.date === h.today) dt.appendChild(el('span', ' 今日', 'muted')); row.appendChild(dt);
+      var st = el('div', null, 'a-st'); st.appendChild(mkBadge(s.main[0], s.main[1], s.main[2]));
+      s.extra.forEach(function (x) { var b = mkBadge(x[0], x[1], x[2]); b.classList.add('sm'); st.appendChild(b); });
+      row.appendChild(st);
+      var tm = el('div', null, 'a-time');
+      var cell = function (lbl, v, unit) { var c = el('span'); c.appendChild(el('small', lbl)); if (v === '' || v === null || v === undefined) c.appendChild(el('span', '—', 'none')); else c.appendChild(document.createTextNode(v + (unit || ''))); tm.appendChild(c); };
+      cell('出勤', rec && rec.clock_in); cell('退勤', rec && rec.clock_out); cell('休憩', rec && rec.break_minutes !== '' ? rec && rec.break_minutes : '', '分'); cell('実働', d.hours ? fmtH(d.hours) : '', 'h');
+      row.appendChild(tm);
+      var eb = el('button', null, 'a-edit'); eb.type = 'button'; eb.appendChild(icon('i-edit')); eb.setAttribute('aria-label', dayText(d.date) + ' の修正を申請');
+      eb.addEventListener('click', function () { openCorrection(d, eb); });
+      row.appendChild(eb);
+      if (s.pend) row.appendChild(el('div', '申請中: ' + s.pend.clock_in + '〜' + s.pend.clock_out + (s.pend.break_minutes !== '' ? '・休憩' + s.pend.break_minutes + '分' : '') + '（管理者の承認待ち）', 'a-pend'));
+      body.appendChild(row);
+    });
+    sec.appendChild(head); sec.appendChild(body); box.appendChild(sec);
   });
+  if (!h.attendance.length) box.appendChild(el('div', '記録はまだありません', 'empty'));
 }
-$('shiftSubmit').addEventListener('click', function (ev) {
-  var k = $('periodSel').value; var days = [];
-  document.querySelectorAll('#dayRows .day').forEach(function (r) {
-    var s = r.querySelectorAll('select'); var kind = s[0].value; if (!kind) return;
-    days.push(kind === 'WORK' ? { date: r.dataset.date, kind: kind, start: s[1].value, end: s[2].value } : { date: r.dataset.date, kind: kind });
-  });
-  if (!confirm(periodLabel(k) + ' を ' + days.length + ' 日分で提出します。よろしいですか？')) return;
-  guarded(ev.currentTarget, async function () {
-    var r = await api('shift.submit', { period_key: k, days: days, note: $('shiftNote').value });
-    await refresh(); toast('提出しました（' + r.version + '版・保存を確認済み）');
-  });
-});
 
-// 勤怠
-$('punchIn').addEventListener('click', function (ev) { guarded(ev.currentTarget, async function () { var r = await api('attendance.punch', { kind: 'in' }); await refresh(); toast(r.idempotent ? '本日はすでに出勤済みです' : '出勤を記録しました（' + r.attendance.clock_in + '）'); }); });
-$('punchOut').addEventListener('click', function (ev) { guarded(ev.currentTarget, async function () { var r = await api('attendance.punch', { kind: 'out', break_minutes: $('breakMin').value }); await refresh(); toast('退勤を記録しました（' + r.attendance.clock_out + '）'); }); });
+// 修正申請（行ごとのモーダル）。存在する値だけ初期値にし、打刻の無い値は空欄。承認までは実績を変えない
+var corState = { day: null, rid: null, orig: null };
+function openCorrection(d, trigger) {
+  var s = dayStatus(d, state.home.today), rec = s.active;
+  corState.day = d; corState.rid = uuid();
+  corState.orig = { clock_in: rec && rec.clock_in || '', clock_out: rec && rec.clock_out || '', break_minutes: rec && rec.break_minutes !== undefined && rec.break_minutes !== '' ? String(rec.break_minutes) : '' };
+  $('corDate').value = d.date;
+  $('corDateText').textContent = dayText(d.date);
+  var bd = $('corDateBadge'); clear(bd); bd.appendChild(mkBadge(s.main[0], s.main[1], s.main[2]));
+  var dl = $('corCurrent'); clear(dl);
+  [['出勤', corState.orig.clock_in], ['退勤', corState.orig.clock_out], ['休憩', corState.orig.break_minutes ? corState.orig.break_minutes + '分' : '']].forEach(function (p) {
+    dl.appendChild(el('dt', p[0])); dl.appendChild(p[1] ? el('dd', p[1]) : el('dd', '記録なし', 'none'));
+  });
+  var pn = $('corPending');
+  pn.classList.toggle('hidden', !s.pend);
+  if (s.pend) pn.querySelector('span').textContent = 'この日はすでに修正申請中です（' + s.pend.clock_in + '〜' + s.pend.clock_out + '）。もう一度申請すると、管理者には両方の申請が届きます。';
+  $('corIn').value = corState.orig.clock_in; $('corOut').value = corState.orig.clock_out; $('corBreak').value = corState.orig.break_minutes; $('corNote').value = '';
+  ['corIn', 'corOut', 'corBreak', 'corNote'].forEach(function (id) { fieldErr($(id), ''); });
+  updateCorDiff();
+  openSheet($('corDialog'), trigger, corState.orig.clock_in ? $('corOut') : $('corIn'));
+}
+function updateCorDiff() {
+  var o = corState.orig || {}, ul = $('corDiff'); clear(ul);
+  var now = { clock_in: $('corIn').value, clock_out: $('corOut').value, break_minutes: $('corBreak').value === '' ? '0' : String(Number($('corBreak').value)) };
+  var changes = 0;
+  [['出勤', 'clock_in', ''], ['退勤', 'clock_out', ''], ['休憩', 'break_minutes', '分']].forEach(function (f) {
+    var a = o[f[1]] || '', b = now[f[1]] || '';
+    if (f[1] === 'break_minutes' && a === '' && b === '0') return;
+    if (a === b) return;
+    changes++;
+    var li = el('li'); li.appendChild(el('span', f[0] + ':')); li.appendChild(el('span', a ? a + f[2] : '記録なし', 'from')); li.appendChild(el('span', '→')); li.appendChild(el('span', b ? b + f[2] : '空欄', 'to'));
+    ul.appendChild(li);
+  });
+  if (!changes) ul.appendChild(el('li', '変更はまだありません（時刻を直すと、ここに違いが出ます）', 'muted'));
+  return changes;
+}
+['corIn', 'corOut', 'corBreak'].forEach(function (id) { $(id).addEventListener('input', function () { fieldErr($(id), ''); updateCorDiff(); }); });
+$('corNote').addEventListener('input', function () { fieldErr($('corNote'), ''); });
 $('corSubmit').addEventListener('click', function (ev) {
+  var ok = true, first = null;
+  var bad = function (input, msg) { fieldErr(input, msg); ok = false; first = first || input; };
+  if (!$('corIn').value) bad($('corIn'), '出勤時刻を入れてください');
+  if (!$('corOut').value) bad($('corOut'), '退勤時刻を入れてください');
+  if ($('corIn').value && $('corOut').value && $('corIn').value >= $('corOut').value) bad($('corOut'), '退勤は出勤より後の時刻にしてください');
+  var bm = $('corBreak').value;
+  if (bm !== '' && (isNaN(Number(bm)) || Number(bm) < 0 || Number(bm) > 600)) bad($('corBreak'), '休憩は 0〜600 分で入れてください');
+  if (!$('corNote').value.trim()) bad($('corNote'), '修正理由を入れてください（管理者が確認します）');
+  if (ok && !updateCorDiff()) { toast('現在の記録から変更がありません', true); return; }
+  if (!ok) { first.focus(); return; }
   guarded(ev.currentTarget, async function () {
-    await api('attendance.correct', { date: $('corDate').value, clock_in: $('corIn').value, clock_out: $('corOut').value, break_minutes: $('corBreak').value, note: $('corNote').value });
-    await refresh(); toast('修正申請を送りました（管理者の承認後に反映されます）');
+    await api('attendance.correct', { date: $('corDate').value, clock_in: $('corIn').value, clock_out: $('corOut').value, break_minutes: bm, note: $('corNote').value }, { requestId: corState.rid });
+    $('corDialog').close();
+    await refresh(); toast('修正申請を送りました（承認待ち。承認されるまで勤務実績は変わりません）');
+  });
+});
+
+// 証明書類（マイページから直接提出。本人に自動で紐付き、管理者だけが確認できる場所に保存）
+var CERT_MAX = 10 * 1024 * 1024;
+function renderCerts(h) {
+  // サーバーが証明書類の保存先を持たない（features.certificates が無い・false）ときは提出欄ごと出さない
+  $('certCard').classList.toggle('hidden', !(h.features && h.features.certificates));
+  var sel = $('certKind'); var kinds = h.certificate_kinds || {};
+  if (!sel.options.length) Object.keys(kinds).forEach(function (k) { var o = el('option', kinds[k]); o.value = k; sel.appendChild(o); });
+  if (!$('certDate').value) $('certDate').value = h.today;
+  var box = $('myCerts'); clear(box);
+  (h.certificates || []).forEach(function (c) {
+    var it = el('div', null, 'item'); var d = el('div'); d.appendChild(dayCell(c.target_date, false).node); it.appendChild(d);
+    var mid = el('div'); mid.appendChild(el('span', c.kind_label, 'chip accent')); mid.appendChild(el('div', c.file_name || '', 'meta')); it.appendChild(mid);
+    it.appendChild(el('div', '提出済み ' + new Date(c.uploaded_at).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric' }), 'meta'));
+    box.appendChild(it);
+  });
+  if (!(h.certificates || []).length) box.appendChild(el('div', '提出した書類はまだありません', 'empty'));
+}
+function fileToBase64(file) {
+  return new Promise(function (resolve, reject) {
+    var r = new FileReader();
+    r.onload = function () { var s = String(r.result); resolve(s.slice(s.indexOf(',') + 1)); };
+    r.onerror = function () { reject(new Error('ファイルを読み込めませんでした。もう一度選んでください')); };
+    r.readAsDataURL(file);
+  });
+}
+function certPicked() {
+  var f = $('certFile').files[0];
+  $('certFileName').textContent = f ? f.name + '（' + (f.size / 1024 / 1024).toFixed(1) + 'MB）' : 'ファイルを選ぶ・写真を撮る';
+  document.querySelector('.picker').classList.toggle('has-file', !!f);
+}
+$('certFile').addEventListener('change', certPicked);
+$('certSubmit').addEventListener('click', function (ev) {
+  var f = $('certFile').files[0];
+  if (!f) { toast('提出するファイルを選んでください', true); return; }
+  if (f.size > CERT_MAX) { toast('ファイルは 10MB までです。写真の場合は画質を下げて撮り直してください', true); return; }
+  var mime = f.type || (/\.heic$/i.test(f.name) ? 'image/heic' : '');
+  var btn = ev.currentTarget;
+  guarded(btn, async function () {
+    btn.lastChild.textContent = '送信中…';
+    try {
+      var data = await fileToBase64(f);
+      // 写真は数 MB あり、携帯の回線では送信に 25 秒以上かかるため待ち時間を延ばす（途中で切って再送すると毎回送り直しになる）
+      await api('certificate.submit', { kind: $('certKind').value, target_date: $('certDate').value, note: $('certNote').value, file_name: f.name, mime: mime, data_base64: data }, { timeoutMs: 120000 });
+      $('certFile').value = ''; $('certNote').value = ''; certPicked();
+      await refresh(); toast('証明書類を提出しました（管理者が確認します）');
+    } finally { btn.lastChild.textContent = '提出する'; }
+  });
+});
+
+// ---------- 実績 ----------
+function renderStats(h) {
+  var wm = h.work_month || {}, rows = h.stats_month || [];
+  var sum = function (k) { return rows.reduce(function (s, r) { return s + (Number(r[k]) || 0); }, 0); };
+  var calls = sum('calls'), conn = sum('connected'), hrs = sum('session_hours');
+  $('statsMonth').textContent = +h.today.slice(5, 7) + '月1日〜' + +h.today.slice(8, 10) + '日';
+  $('kDays').textContent = wm.worked_days || 0; $('kDaysSub').textContent = '確定シフト ' + (wm.confirmed_days || 0) + '日';
+  $('kHours').textContent = wm.hours || 0;
+  $('kCalls').textContent = calls; $('kCallsSub').textContent = '架電時間 ' + fmtH(hrs) + '時間';
+  $('kConn').textContent = conn; $('kConnSub').textContent = calls ? '接続率 ' + Math.round(conn / calls * 100) + '%' : '接続率 —';
+  $('workMonth').textContent = '出勤 ' + (wm.worked_days || 0) + ' 日・実働 ' + (wm.hours || 0) + ' 時間（確定シフト ' + (wm.confirmed_days || 0) + ' 日）';
+  var box = $('myStats'); clear(box);
+  rows.forEach(function (r) {
+    var p = el('div', null, 'proj'); p.appendChild(el('div', r.project_name || '（案件不明）', 'pn'));
+    var v = function (val, lbl) { var c = el('div', null, 'pv'); c.appendChild(el('small', lbl)); c.appendChild(document.createTextNode(val)); p.appendChild(c); };
+    v(r.calls, '架電'); v(r.connected, '接続'); v(r.calls ? Math.round(r.connected / r.calls * 100) + '%' : '—', '接続率'); v(fmtH(r.session_hours) + 'h', '架電時間');
+    box.appendChild(p);
+  });
+  if (!rows.length) box.appendChild(el('div', '今月の確定した架電実績はまだありません', 'empty'));
+}
+
+// ---------- 営業実績（手入力）: 本人 × 日付 × 案件。入力 → 確認 → 保存完了。修正は同じ画面で版が上がる ----------
+function repDefs() { return (state.home && state.home.metric_defs) || []; }
+function repEntry(date, pj) { return ((state.home && state.home.reports) || []).filter(function (e) { return e.date === date && e.project_id === pj; })[0] || null; }
+function repVals(e) { return repDefs().map(function (d) { var b = el('span', d.label); b.appendChild(el('b', e.values[d.metric_key] === undefined ? '—' : e.values[d.metric_key])); return b; }); }
+function fmtAt(iso) { return iso ? new Date(iso).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''; }
+function repItem(e, withHistory) {
+  var it = el('div', null, 'rep-item');
+  it.appendChild(el('div', e.project_name || pnameOf(e.project_id), 'rp-name'));
+  var eb = el('button', null, 'small secondary rp-edit'); eb.type = 'button'; eb.appendChild(icon('i-edit')); eb.appendChild(document.createTextNode('修正'));
+  eb.setAttribute('aria-label', dayText(e.date) + ' ' + (e.project_name || '') + ' の営業実績を修正');
+  eb.addEventListener('click', function () { openReport(eb, { date: e.date, project_id: e.project_id }); });
+  it.appendChild(eb);
+  var v = el('div', null, 'rp-vals'); repVals(e).forEach(function (x) { v.appendChild(x); }); it.appendChild(v);
+  var meta = el('div', null, 'rp-meta');
+  meta.appendChild(mkBadge(e.version > 1 ? '修正済み（第' + e.version + '版）' : '保存済み', e.version > 1 ? 'info' : 'ok', e.version > 1 ? 'i-sync' : 'i-check'));
+  meta.appendChild(el('span', fmtAt(e.entered_at) + (e.note ? '・' + e.note : '')));
+  it.appendChild(meta);
+  if (withHistory && e.history && e.history.length > 1) {
+    var ul = el('ul', null, 'rep-hist');
+    e.history.slice().reverse().forEach(function (hv) {
+      var label = function (k) { var d = repDefs().filter(function (x) { return x.metric_key === k; })[0]; return d ? d.label : k; };
+      var txt = '第' + hv.version + '版 ' + fmtAt(hv.at) + '：' + (hv.kind === 'NEW' ? '新規 ' : '') +
+        hv.changes.map(function (c) { return label(c.metric_key) + ' ' + (c.from === null ? '—' : c.from) + '→' + (c.to === null ? '—' : c.to); }).join('・');
+      ul.appendChild(el('li', txt));
+    });
+    it.appendChild(ul);
+  }
+  return it;
+}
+function renderReports(h) {
+  var list = h.reports || [];
+  var box = $('repToday'); clear(box);
+  var todays = list.filter(function (e) { return e.date === h.today; });
+  todays.forEach(function (e) { box.appendChild(repItem(e, true)); });
+  if (!todays.length) box.appendChild(el('div', '今日の営業実績はまだ入力されていません', 'rep-empty'));
+  $('reportOpen').textContent = todays.length ? '別の案件を入力・修正' : '営業実績を入力';
+  var m = (h.reports_month || [])[0] || {};
+  var sum = $('repMonth'); clear(sum);
+  if (repDefs().length) {
+    repDefs().forEach(function (d) { var x = el('div', null, 'rs'); x.appendChild(el('small', '今月の' + d.label)); x.appendChild(el('b', m['m_' + d.metric_key] || 0)); sum.appendChild(x); });
+    sum.appendChild(el('div', '申告（手入力）の今月合計・' + (m.entries || 0) + '件の入力（日×案件）', 'rs-cap'));
+  }
+  var past = $('repPastList'); clear(past);
+  var byDate = {};
+  list.forEach(function (e) { if (e.date !== h.today) (byDate[e.date] = byDate[e.date] || []).push(e); });
+  Object.keys(byDate).sort().reverse().forEach(function (d) {
+    var g = el('div', null, 'rep-day'); var hd = el('div', null, 'rd-head'); hd.appendChild(dayCell(d, false).node); g.appendChild(hd);
+    byDate[d].forEach(function (e) { g.appendChild(repItem(e, true)); }); past.appendChild(g);
+  });
+  if (!Object.keys(byDate).length) past.appendChild(el('div', '過去 ' + (h.report_window_days || 31) + ' 日の入力はまだありません', 'empty'));
+  past.appendChild(el('p', '本人が入力・修正できるのは過去 ' + (h.report_window_days || 31) + ' 日までです。', 'muted'));
+}
+
+var repState = { rid: null, base: 0, orig: null, payload: null, step: 1 };
+function repStep(n) {
+  repState.step = n;
+  document.querySelectorAll('#reportDialog [data-rstep]').forEach(function (d) { d.hidden = d.getAttribute('data-rstep') !== String(n); });
+  document.querySelectorAll('#reportDialog .stepper span').forEach(function (x) { x.classList.toggle('on', +x.dataset.s <= n); });
+  ['repFoot1', 'repFoot2', 'repFoot3'].forEach(function (id, i) { $(id).classList.toggle('hidden', i + 1 !== n); });
+  $('repStepLabel').textContent = ['', '手順1/3 入力', '手順2/3 確認', '保存しました'][n];
+}
+function repProject() { var r = document.querySelector('input[name=repProject]:checked'); return r ? r.value : ''; }
+function buildRepProjects(sel) {
+  var box = $('repProjects'); clear(box);
+  var date = $('repDate').value;
+  (state.home.projects || []).forEach(function (p) {
+    var lb = el('label'); var r = el('input'); r.type = 'radio'; r.name = 'repProject'; r.value = p.project_id; if (p.project_id === sel) r.checked = true;
+    r.addEventListener('change', function () { fieldErr($('repProjects'), ''); loadRepEntry(); });
+    lb.appendChild(r); lb.appendChild(document.createTextNode(p.project_name));
+    if (repEntry(date, p.project_id)) lb.appendChild(el('span', '入力済み', 'has'));
+    box.appendChild(lb);
+  });
+}
+// 日付と案件の組合せごとに、保存済みの値を読み込む（修正なら変更前の値を表示）
+function loadRepEntry() {
+  var date = $('repDate').value, pj = repProject();
+  var e = pj ? repEntry(date, pj) : null;
+  repState.base = e ? e.version : 0; repState.orig = e;
+  var mode = $('repMode');
+  mode.classList.toggle('hidden', !e);
+  if (e) mode.querySelector('span').textContent = 'この日・案件は保存済みです（第' + e.version + '版）。数字を直して保存すると第' + (e.version + 1) + '版になり、修正前の値は履歴に残ります。';
+  var box = $('repFields'); clear(box);
+  repDefs().forEach(function (d) {
+    var f = el('div', null, 'num-field'); f.dataset.key = d.metric_key;
+    var id = 'rep_' + d.metric_key;
+    var lb = el('label', d.label + (d.required ? '' : '（任意）')); lb.htmlFor = id;
+    if (e) lb.appendChild(el('span', '保存済み ' + (e.values[d.metric_key] === undefined ? '—' : e.values[d.metric_key]), 'was'));
+    f.appendChild(lb);
+    var st = el('div', null, 'num-step');
+    var minus = el('button', '−'); minus.type = 'button'; minus.setAttribute('aria-label', d.label + 'を1減らす');
+    var inp = el('input'); inp.id = id; inp.type = 'text'; inp.inputMode = 'numeric'; inp.setAttribute('pattern', '[0-9]*'); inp.autocomplete = 'off'; inp.maxLength = 5;
+    inp.value = e && e.values[d.metric_key] !== undefined ? e.values[d.metric_key] : '';
+    inp.placeholder = '0';
+    var plus = el('button', '+'); plus.type = 'button'; plus.setAttribute('aria-label', d.label + 'を1増やす');
+    var bump = function (n) { var v = Math.max(d.min, Math.min(d.max, (parseInt(inp.value, 10) || 0) + n)); inp.value = v; onRepInput(f, d); };
+    minus.addEventListener('click', function () { bump(-1); }); plus.addEventListener('click', function () { bump(1); });
+    inp.addEventListener('input', function () { inp.value = inp.value.replace(/[０-９]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); }).replace(/[^0-9]/g, ''); onRepInput(f, d); });
+    st.appendChild(minus); st.appendChild(inp); st.appendChild(plus); f.appendChild(st);
+    var err = el('p', '', 'ferr'); err.id = id + 'Err'; err.hidden = true; f.appendChild(err);
+    box.appendChild(f);
+  });
+  $('repNote').value = e ? (e.note || '') : '';
+}
+function onRepInput(f, d) {
+  var inp = f.querySelector('input'); fieldErr(inp, '');
+  var o = repState.orig; f.classList.toggle('changed', !!o && String(o.values[d.metric_key]) !== inp.value);
+}
+function openReport(trigger, opt) {
+  opt = opt || {};
+  var h = state.home; if (!h) return;
+  if (!repDefs().length) { toast('入力できる項目がありません。管理者に確認してください', true); return; }
+  $('repWho').textContent = h.me.display_name + ' さん';
+  var d = $('repDate'); d.max = h.today; d.min = addDaysStr(h.today, -(h.report_window_days || 31)); d.value = opt.date || h.today;
+  var pj = opt.project_id || (h.session && h.session.project_id) || $('projectSel').value || '';
+  buildRepProjects(pj);
+  if (!repProject() && (h.projects || []).length === 1) document.querySelector('input[name=repProject]').checked = true;
+  loadRepEntry(); fieldErr($('repProjects'), '');
+  repStep(1);
+  openSheet($('reportDialog'), trigger, repProject() ? $('rep_' + repDefs()[0].metric_key) : document.querySelector('input[name=repProject]'));
+}
+$('reportOpen').addEventListener('click', function (ev) { openReport(ev.currentTarget, {}); });
+$('repDate').addEventListener('change', function () { var pj = repProject(); buildRepProjects(pj); loadRepEntry(); });
+$('repNext').addEventListener('click', function () {
+  var date = $('repDate').value, pj = repProject(), ok = true, first = null, vals = {};
+  if (!date || date > state.home.today || date < $('repDate').min) { fieldErr($('repDate'), '今日から過去 ' + (state.home.report_window_days || 31) + ' 日までの日付を選んでください'); ok = false; first = $('repDate'); }
+  if (!pj) { fieldErr($('repProjects'), '案件を選んでください'); ok = false; first = first || document.querySelector('input[name=repProject]'); }
+  repDefs().forEach(function (d) {
+    var inp = $('rep_' + d.metric_key); if (!inp) return;
+    var v = inp.value.trim();
+    if (v === '') { if (d.required) { fieldErr(inp, d.label + 'を入れてください（0 件なら 0）'); ok = false; first = first || inp; } return; }
+    var n = Number(v);
+    if (n < d.min || n > d.max) { fieldErr(inp, d.min + '〜' + d.max + ' で入れてください'); ok = false; first = first || inp; return; }
+    vals[d.metric_key] = n;
+  });
+  if (!ok) { first.focus(); return; }
+  var o = repState.orig;
+  var changed = !o || repDefs().some(function (d) { return o.values[d.metric_key] !== vals[d.metric_key]; }) || (o.note || '') !== $('repNote').value;
+  if (!changed) { toast('保存済みの内容から変更がありません', true); return; }
+  repState.payload = { date: date, project_id: pj, values: vals, note: $('repNote').value, base_version: repState.base };
+  repState.rid = uuid(); // 確認画面ごとに 1 つ（二度押し・再送でも二重登録しない）
+  var dl = $('repConfirm'); clear(dl);
+  var row = function (k, v, from) { dl.appendChild(el('dt', k)); var dd = el('dd'); if (from !== undefined && from !== null && String(from) !== String(v)) dd.appendChild(el('span', from, 'from')); dd.appendChild(document.createTextNode(v)); dl.appendChild(dd); };
+  row('日付', dayText(date)); row('案件', pnameOf(pj)); row('入力する人', state.home.me.display_name);
+  repDefs().forEach(function (d) { row(d.label, vals[d.metric_key] === undefined ? '—' : vals[d.metric_key] + ' ' + d.unit, o ? (o.values[d.metric_key] === undefined ? '—' : o.values[d.metric_key] + ' ' + d.unit) : undefined); });
+  if ($('repNote').value) row('備考', $('repNote').value);
+  row('種類', o ? '修正（第' + o.version + '版 → 第' + (o.version + 1) + '版）' : '新規');
+  var w = [];
+  if (vals.contacts !== undefined && vals.calls !== undefined && vals.contacts > vals.calls) w.push('コンタクト数がコール数より多くなっています');
+  if (vals.appts !== undefined && vals.contacts !== undefined && vals.appts > vals.contacts) w.push('AP数がコンタクト数より多くなっています');
+  $('repWarn').classList.toggle('hidden', !w.length); $('repWarn').querySelector('span').textContent = w.join('。') + (w.length ? '。このままでよければ保存してください。' : '');
+  repStep(2); setTimeout(function () { $('repSave').focus(); }, 30);
+});
+$('repBack').addEventListener('click', function () { repStep(1); });
+$('repSave').addEventListener('click', function (ev) {
+  var p = repState.payload; if (!p) return;
+  guarded(ev.currentTarget, async function () {
+    var r = await api('report.submit', p, { requestId: repState.rid });
+    state.home = await api('me.home', {}); render();
+    $('repDoneTitle').textContent = r.unchanged ? '変更はありませんでした' : r.corrected ? '修正を保存しました' : '保存しました';
+    $('repDoneText').textContent = dayText(p.date) + '・' + pnameOf(p.project_id) + '（第' + r.version + '版）をサーバーに保存し、保存を確認しました。' + (r.corrected ? '修正前の値は履歴に残っています。' : '');
+    repStep(3); repState.payload = null;
+    toast((r.corrected ? '修正を保存しました' : '営業実績を保存しました') + '（第' + r.version + '版・保存を確認済み）');
+    setTimeout(function () { $('repAnother').focus(); }, 30);
+  }, function (e) {
+    if (e.code === 'CONFLICT') {
+      refresh().then(function () { repStep(1); buildRepProjects(p.project_id); loadRepEntry(); }).catch(function () {});
+      toast(e.message, true); return;
+    }
+    toast(e.message || '保存できませんでした', true);
+  });
+});
+$('repAnother').addEventListener('click', function (ev) { var d = $('repDate').value; buildRepProjects(''); $('repDate').value = d; loadRepEntry(); repStep(1); document.querySelector('input[name=repProject]') && document.querySelector('input[name=repProject]').focus(); });
+$('reportDialog').onclosed = function () { repState.payload = null; };
+
+// ---------- パスワード変更（本人再認証 → 新パスワード → 完了。画面・勤務状態はそのまま） ----------
+function renderPw(h) {
+  var has = !!h.me.has_password;
+  $('pwState').textContent = has ? '設定済みです。変更するときは、登録メールに届く認証コードで本人確認をします。' : 'まだ設定していません。設定すると、次回からメールアドレスとパスワードでログインできます。';
+  $('pwOpen').textContent = has ? 'パスワードを変更' : 'パスワードを設定';
+}
+var STEP_LABEL = { 1: '手順1/3 本人確認', 2: '手順2/3 認証コードの入力', 3: '手順3/3 新しいパスワード', 4: '完了' };
+function pwStep(n) {
+  document.querySelectorAll('#pwDialog [data-step]').forEach(function (d) { d.hidden = d.getAttribute('data-step') !== String(n); });
+  document.querySelectorAll('#pwDialog .stepper span').forEach(function (s) { s.classList.toggle('on', +s.dataset.s <= n); });
+  $('pwStepLabel').textContent = STEP_LABEL[n];
+  $('pwClose').textContent = n === 4 ? '閉じる' : 'キャンセル';
+  var f = { 1: 'reauthSend', 2: 'reauthCode', 3: 'pwNew2', 4: 'pwClose' }[n];
+  setTimeout(function () { $(f).focus(); }, 30);
+}
+function resetPwDialog() {
+  ['reauthCode', 'pwNew2', 'pwNew2c'].forEach(function (id) { $(id).value = ''; fieldErr($(id), ''); });
+  fieldErr($('reauthSend'), ''); $('pwShow').checked = false; $('pwNew2').type = $('pwNew2c').type = 'password';
+  clearInterval($('reauthResend')._timer);
+}
+$('pwOpen').addEventListener('click', function (ev) {
+  $('pwTitle').textContent = state.home.me.has_password ? 'パスワードの変更' : 'パスワードの設定';
+  resetPwDialog(); openSheet($('pwDialog'), ev.currentTarget); pwStep(1);
+});
+$('pwDialog').onclosed = resetPwDialog; // 閉じたら入力（コード・パスワード）を残さない
+function reauthErr(e) {
+  var target = $('pwDialog').querySelector('[data-step="2"]').hidden ? $('reauthSend') : $('reauthCode');
+  fieldErr(target, (e.message || '通信に失敗しました') + ' ' + (OTP_HINT[e.code] || ''));
+}
+async function requestReauth(btn, resend) {
+  await guarded(btn, async function () {
+    var r = await api('auth.requestReauth', {});
+    $('reauthSentTo').textContent = (r.sent_to || '登録メール') + ' 宛てに' + (resend || r.resent ? '同じ認証コードを再送' : '認証コードの送信を受け付け') + 'ました。通常は1〜2分以内に届きます。' + (r.cooldown ? '（直前に送ったコードが使えます）' : '');
+    pwStep(2); countdown($('reauthResend'), r.resend_after_sec || 60, '認証コードを再送する');
+  }, reauthErr);
+}
+$('reauthSend').addEventListener('click', function (ev) { fieldErr($('reauthSend'), ''); requestReauth(ev.currentTarget, false); });
+$('reauthResend').addEventListener('click', function (ev) { requestReauth(ev.currentTarget, true); });
+$('reauthCode').addEventListener('input', function () { fieldErr($('reauthCode'), ''); });
+$('reauthCode').addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); $('reauthVerify').click(); } });
+$('reauthVerify').addEventListener('click', function (ev) {
+  var code = $('reauthCode').value.trim();
+  if (!/^\d{6}$/.test(code)) { fieldErr($('reauthCode'), 'メールに届いた6桁の数字を入れてください'); return; }
+  guarded(ev.currentTarget, async function () {
+    await api('auth.verifyReauth', { code: code });
+    $('reauthCode').value = ''; clearInterval($('reauthResend')._timer); pwStep(3);
+  }, reauthErr);
+});
+$('pwShow').addEventListener('change', function () { $('pwNew2').type = $('pwNew2c').type = this.checked ? 'text' : 'password'; });
+['pwNew2', 'pwNew2c'].forEach(function (id) { $(id).addEventListener('input', function () { fieldErr($('pwNew2'), ''); fieldErr($('pwNew2c'), ''); }); });
+$('pwSave2').addEventListener('click', function (ev) {
+  var a = $('pwNew2').value, b = $('pwNew2c').value;
+  if (a.length < 8) { fieldErr($('pwNew2'), '8文字以上にしてください'); $('pwNew2').focus(); return; }
+  if (a !== b) { fieldErr($('pwNew2c'), '確認用のパスワードが一致しません'); $('pwNew2c').focus(); return; }
+  guarded(ev.currentTarget, async function () {
+    await api('auth.setPassword', { password: a });
+    $('pwNew2').value = $('pwNew2c').value = '';
+    state.home.me.has_password = true; renderPw(state.home); $('pwSetCard').classList.add('hidden');
+    pwStep(4); toast('パスワードを変更しました');
+  }, function (e) {
+    if (e.code === 'REAUTH_REQUIRED') { pwStep(1); fieldErr($('reauthSend'), e.message); return; }
+    fieldErr($('pwNew2'), e.message || '保存できませんでした'); $('pwNew2').focus();
   });
 });
 
 // ---------- 起動 ----------
 (function init() {
+  netState();
   var params = new URLSearchParams(location.search);
   if (params.get('invite')) {
     state.invite = params.get('invite');
@@ -559,7 +1869,9 @@ $('corSubmit').addEventListener('click', function (ev) {
   }
   state.token = state.invite ? null : load(TOKEN_KEY);
   if (!state.token) { showAuth(); return; }
-  refresh().then(showApp).catch(function () { if (!state.token) return; showAuth(); });
+  $('appView').classList.remove('hidden'); $('appView').classList.add('loading'); $('loading').classList.remove('hidden');
+  var done = function () { $('appView').classList.remove('loading'); $('loading').classList.add('hidden'); };
+  refresh().then(function () { done(); showApp(); }).catch(function () { done(); if (!state.token) return; showAuth(); });
 })();
 </script>
 </body>
