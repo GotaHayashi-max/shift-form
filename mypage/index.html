@@ -569,7 +569,7 @@
     <div data-panel="stats" class="panel hidden">
       <div class="card" id="reportCard">
         <div class="card-head"><h2><svg class="i"><use href="#i-edit"/></svg>今日の営業実績</h2><span class="src-tag">申告（手入力）</span></div>
-        <p class="muted" style="margin:2px 0 0">コール数・コンタクト数・AP数を案件ごとに入力します。Zoom の通話件数とは別に記録され、足し合わされません。</p>
+        <p class="muted" style="margin:2px 0 0">直コン数・受コン数・直AP数・受AP数を案件ごとに入力します（コンタクト数・AP数は合計を自動で計算）。コール数は Zoom の通話件数を使うので入力は不要です。</p>
         <div id="repToday" class="rep-today"></div>
         <button id="reportOpen" type="button" class="block">営業実績を入力</button>
         <div id="repMonth" class="rep-sum"></div>
@@ -1768,6 +1768,8 @@ $('repNext').addEventListener('click', function () {
   var w = [];
   if (vals.contacts !== undefined && vals.calls !== undefined && vals.contacts > vals.calls) w.push('コンタクト数がコール数より多くなっています');
   if (vals.appts !== undefined && vals.contacts !== undefined && vals.appts > vals.contacts) w.push('AP数がコンタクト数より多くなっています');
+  if (vals.appts_direct !== undefined && vals.contacts_direct !== undefined && vals.appts_direct > vals.contacts_direct) w.push('直AP数が直コン数より多くなっています');
+  if (vals.appts_reception !== undefined && vals.contacts_reception !== undefined && vals.appts_reception > vals.contacts_reception) w.push('受AP数が受コン数より多くなっています');
   $('repWarn').classList.toggle('hidden', !w.length); $('repWarn').querySelector('span').textContent = w.join('。') + (w.length ? '。このままでよければ保存してください。' : '');
   repStep(2); setTimeout(function () { $('repSave').focus(); }, 30);
 });
