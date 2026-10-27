@@ -110,6 +110,34 @@
   .today .headline { font-size: 22px; font-weight: 800; margin: 2px 0 2px; letter-spacing: .01em; }
   .today .sub { font-size: 13px; opacity: .9; }
   .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 14px 0 12px; }
+  .steps { list-style: none; padding: 0; }
+  .steps.steps6 { grid-template-columns: repeat(6, 1fr); gap: 4px; }
+  .steps6 .step { padding: 7px 2px; font-size: 11px; }
+  .steps6 .step small { font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  @media (max-width: 380px) { .steps.steps6 { grid-template-columns: repeat(3, 1fr); } }
+  .flow .fstep { border-top: 1px solid var(--border); padding: 14px 0 4px; }
+  .flow .fstep:first-of-type { border-top: 0; padding-top: 4px; }
+  .flow .fhead { display: flex; align-items: center; gap: 8px; font-weight: 800; margin-bottom: 8px; }
+  .flow .fhead label { margin: 0; font-size: inherit; }
+  .flow .num { width: 24px; height: 24px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 13px; background: var(--accent-soft); color: var(--accent); flex: 0 0 auto; }
+  .flow .fstate { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--text3); }
+  .flow .fstep.done .num { background: var(--ok); color: #fff; } .flow .fstep.done .fstate { color: var(--ok); }
+  .flow .fstep.locked { opacity: .55; } .flow .fstep.locked .num { background: var(--border); color: var(--text3); }
+  .flow .fstep.now .num { background: var(--accent); color: #fff; }
+  .flow .fhint { margin: 6px 0 0; font-size: 12px; color: var(--text3); min-height: 0; }
+  .flow .fhint:empty { display: none; }
+  .flow .out-row { display: flex; gap: 8px; align-items: center; } .flow .out-row label { margin: 0; white-space: nowrap; font-size: 13px; } .flow .out-row input { width: 84px; } .flow .out-row button { flex: 1; }
+  .op[aria-pressed="true"], .op.picked { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .opstatus { position: sticky; top: 8px; z-index: 5; display: flex; align-items: center; gap: 10px; padding: 10px 12px; margin: 0 0 12px; border-radius: var(--r-md); font-size: 14px; font-weight: 700; background: var(--info-soft); color: var(--info); box-shadow: var(--shadow, 0 2px 8px rgba(0,0,0,.08)); }
+  .opstatus.ok { background: var(--ok-soft); color: var(--ok); } .opstatus.ng { background: var(--ng-soft); color: var(--ng); }
+  .opstatus .spin { width: 16px; height: 16px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: spin .8s linear infinite; flex: 0 0 auto; }
+  .opstatus.ok .spin, .opstatus.ng .spin { display: none; }
+  .opstatus.ok::before { content: "✓"; } .opstatus.ng::before { content: "✕"; }
+  .opstatus .tclose { margin-left: auto; background: transparent; border: 0; color: inherit; min-height: 0; padding: 2px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  button[aria-busy="true"] { position: relative; color: transparent !important; }
+  button[aria-busy="true"]::after { content: ""; position: absolute; inset: 0; margin: auto; width: 18px; height: 18px; border-radius: 50%; border: 2px solid #fff; border-right-color: transparent; animation: spin .8s linear infinite; }
+  button.secondary[aria-busy="true"]::after { border-color: var(--accent); border-right-color: transparent; }
   .step { background: rgba(255, 255, 255, .14); border-radius: var(--r-md); padding: 8px 6px; text-align: center; font-size: 12px; font-weight: 700; line-height: 1.3; }
   .step small { display: block; font-weight: 600; opacity: .85; font-size: 11px; margin-top: 2px; }
   .step.done { background: rgba(255, 255, 255, .28); }
@@ -462,27 +490,53 @@
         <div class="date" id="todayDate"></div>
         <div class="headline" id="todayHeadline" aria-live="polite"></div>
         <div class="sub" id="todaySub"></div>
-        <div class="steps" aria-label="今日の流れ">
-          <div class="step" id="stepIn">① 出勤打刻<small id="stepInT">勤怠タブ</small></div>
-          <div class="step" id="stepCall">② 架電<small id="stepCallT">開始〜終了</small></div>
-          <div class="step" id="stepOut">③ 退勤打刻<small id="stepOutT">勤怠タブ</small></div>
-        </div>
+        <ol class="steps steps6" aria-label="今日の流れ（この順に進みます）">
+          <li class="step" id="stepIn">① 出勤<small id="stepInT">未</small></li>
+          <li class="step" id="stepProj">② 案件<small id="stepProjT">—</small></li>
+          <li class="step" id="stepLine">③ 回線<small id="stepLineT">—</small></li>
+          <li class="step" id="stepCall">④ 架電<small id="stepCallT">—</small></li>
+          <li class="step" id="stepEnd">⑤ 終了<small id="stepEndT">—</small></li>
+          <li class="step" id="stepOut">⑥ 退勤<small id="stepOutT">未</small></li>
+        </ol>
         <div class="grid2" id="todayActions"></div>
-        <div class="note">出勤打刻と架電の開始は別の操作です。押した時間の通話だけが実績になります。</div>
+        <div class="note">出勤 → 案件 → 空き回線 → 架電開始 の順に進みます。架電を終了してから退勤します。押した時間の通話だけが実績になります。</div>
       </div>
-      <div class="card">
-        <h2><svg class="i"><use href="#i-phone"/></svg>架電セッション</h2>
-        <div id="liveBox" class="live hidden"><span class="dot" aria-hidden="true"></span><p id="sessionNow"></p><span class="timer" id="liveTimer"></span></div>
-        <div id="idleBox" class="idle"></div>
-        <div id="afterCall" class="after-call hidden" role="status"><span>架電おつかれさまでした。今日の営業実績を入力しますか？</span><button type="button" id="afterCallGo" class="small">営業実績を入力</button><button type="button" id="afterCallLater" class="small secondary">あとで</button></div>
-        <label for="projectSel">案件</label>
-        <select id="projectSel"></select>
-        <label>回線（オペレーター）</label>
-        <div id="opGrid" class="ops"></div>
-        <div class="grid2" style="margin-top:14px">
-          <button id="switchBtn" type="button" class="secondary hidden">この案件に切り替える</button>
-          <button id="endBtn" type="button" class="danger hidden">架電を終了</button>
-        </div>
+      <div id="opStatus" class="opstatus hidden" role="status" aria-live="polite"><span class="spin" aria-hidden="true"></span><span id="opStatusMsg"></span><button type="button" class="tclose" id="opStatusClose" aria-label="表示を閉じる"><svg class="i"><use href="#i-x"/></svg></button></div>
+      <div class="card flow" id="flowCard">
+        <h2><svg class="i"><use href="#i-phone"/></svg>架電</h2>
+        <section class="fstep" id="fs1" aria-labelledby="fs1t">
+          <div class="fhead"><span class="num" aria-hidden="true">1</span><span id="fs1t">出勤打刻</span><span class="fstate" id="fs1s"></span></div>
+          <button id="flowIn" type="button" class="ok block">出勤する</button>
+        </section>
+        <section class="fstep" id="fs2" aria-labelledby="fs2t">
+          <div class="fhead"><span class="num" aria-hidden="true">2</span><label for="projectSel" id="fs2t">案件を選ぶ</label><span class="fstate" id="fs2s"></span></div>
+          <select id="projectSel"></select>
+          <p class="fhint" id="fs2h"></p>
+        </section>
+        <section class="fstep" id="fs3" aria-labelledby="fs3t">
+          <div class="fhead"><span class="num" aria-hidden="true">3</span><span id="fs3t">空いている回線を選ぶ</span><span class="fstate" id="fs3s"></span></div>
+          <div id="opGrid" class="ops" role="group" aria-labelledby="fs3t"></div>
+          <p class="fhint" id="fs3h"></p>
+        </section>
+        <section class="fstep" id="fs4" aria-labelledby="fs4t">
+          <div class="fhead"><span class="num" aria-hidden="true">4</span><span id="fs4t">架電を開始</span><span class="fstate" id="fs4s"></span></div>
+          <div id="liveBox" class="live hidden"><span class="dot" aria-hidden="true"></span><p id="sessionNow"></p><span class="timer" id="liveTimer"></span></div>
+          <div id="idleBox" class="idle"></div>
+          <button id="startBtn" type="button" class="block">架電を開始</button>
+          <button id="switchBtn" type="button" class="secondary block hidden">選んだ案件に切り替える</button>
+          <p class="fhint" id="fs4h"></p>
+        </section>
+        <section class="fstep" id="fs5" aria-labelledby="fs5t">
+          <div class="fhead"><span class="num" aria-hidden="true">5</span><span id="fs5t">架電を終了・営業実績を入力</span><span class="fstate" id="fs5s"></span></div>
+          <button id="endBtn" type="button" class="danger block hidden">架電を終了</button>
+          <div id="afterCall" class="after-call hidden" role="status"><span>架電おつかれさまでした。今日の営業実績を入力しますか？</span><button type="button" id="afterCallGo" class="small">営業実績を入力</button><button type="button" id="afterCallLater" class="small secondary">あとで</button></div>
+          <button id="reportGo" type="button" class="secondary block">営業実績を入力する</button>
+        </section>
+        <section class="fstep" id="fs6" aria-labelledby="fs6t">
+          <div class="fhead"><span class="num" aria-hidden="true">6</span><span id="fs6t">退勤打刻</span><span class="fstate" id="fs6s"></span></div>
+          <div class="out-row"><label for="flowBreak">休憩（分）</label><input id="flowBreak" type="number" inputmode="numeric" min="0" max="600" step="5" value="60"><button id="flowOut" type="button" class="secondary">退勤する</button></div>
+          <p class="fhint" id="fs6h"></p>
+        </section>
         <p class="muted" style="margin:12px 0 0">開始・終了の時刻はサーバーの時刻で記録されます。画面を閉じても15分で自動終了します（要確認として記録）。</p>
       </div>
     </div>
@@ -773,9 +827,11 @@ async function api(action, params, opt) {
   if (state.token) body.token = state.token;
   var lastErr;
   for (var attempt = 0; attempt < 3; attempt++) {
-    // 1 回 25 秒で打ち切って同じ request_id で再送（サーバー側で処理済みなら前の応答が返る＝二重登録しない）
+    // 0 = いま作った送信識別子の初回（サーバーは送信記録を読まずに済む）／1 以上 = 再送・同じ識別子の使い直し（サーバーが送信記録で二重登録を防ぐ）
+    body.attempt = attempt + (opt.requestId ? 1 : 0);
+    // 1 回 45 秒で打ち切って同じ request_id で再送（サーバー側で処理済みなら前の応答が返る＝二重登録しない）
     var ctl = window.AbortController ? new AbortController() : null;
-    var timer = ctl ? setTimeout(function () { ctl.abort(); }, opt.timeoutMs || 25000) : null;
+    var timer = ctl ? setTimeout(function () { ctl.abort(); }, opt.timeoutMs || 45000) : null; // サーバーは混雑時に最大 30 秒順番を待つ
     try {
       var res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body), redirect: 'follow', cache: 'no-store', signal: ctl ? ctl.signal : undefined });
       if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -799,15 +855,34 @@ async function api(action, params, opt) {
   throw lastErr;
 }
 
+// 操作の状態表示（処理中・保存完了・エラーを区別）: 処理中は経過秒を出し、完了は保存を確認した時刻、エラーは閉じるまで残す
+function opStatus(kind, msg) {
+  var box = $('opStatus'); clearInterval(opStatus._t);
+  if (!kind) { box.classList.add('hidden'); return; }
+  box.classList.remove('hidden', 'ok', 'ng', 'busy'); box.classList.add(kind);
+  box.setAttribute('role', kind === 'ng' ? 'alert' : 'status');
+  if (kind === 'busy') {
+    var t0 = Date.now();
+    var tick = function () { var sec = Math.floor((Date.now() - t0) / 1000); $('opStatusMsg').textContent = '処理中: ' + msg + (sec >= 2 ? '（' + sec + '秒）' : '') + ' — 画面を閉じずにお待ちください'; };
+    tick(); opStatus._t = setInterval(tick, 1000);
+  } else {
+    $('opStatusMsg').textContent = (kind === 'ok' ? '保存完了: ' : 'エラー: ') + msg + (kind === 'ok' ? '（' + new Date().toLocaleTimeString('ja-JP', { timeZone: 'Asia/Tokyo' }) + ' 確認済み）' : '');
+  }
+}
+$('opStatusClose').addEventListener('click', function () { opStatus(null); });
+
 // 二重クリック防止: 実行中はボタンを無効化し、処理中の表示を出す。onError を渡すとトーストの代わりにそちらで表示
-async function guarded(btn, fn, onError) {
+// label を渡すと、上部の状態表示に「処理中 → 保存完了／エラー」を出す（fn が返した文字列を完了の文言に使う）
+async function guarded(btn, fn, onError, label) {
   if (state.busy) return;
   state.busy = true; if (btn) { btn.disabled = true; btn.setAttribute('aria-busy', 'true'); }
-  try { await fn(); } catch (e) {
+  if (label) opStatus('busy', label);
+  try { var done = await fn(); if (label) opStatus('ok', typeof done === 'string' ? done : label); } catch (e) {
+    if (label) opStatus('ng', (e.message || '通信に失敗しました') + (e.server ? '' : '（保存されていない可能性があります）'));
     if (onError) onError(e); else toast(e.message || '通信に失敗しました。保存されていない可能性があります', true);
     if (OTP_HINT[e.code] && !$('authView').classList.contains('hidden')) otpStatus(e.message + ' ' + OTP_HINT[e.code], true);
   }
-  finally { state.busy = false; if (btn) { btn.disabled = false; btn.removeAttribute('aria-busy'); } if (state.home) updateShiftStatus(); }
+  finally { state.busy = false; if (btn) { btn.disabled = false; btn.removeAttribute('aria-busy'); } if (state.home) { updateShiftStatus(); render(); } }
 }
 
 // ---------- モーダル（Esc で閉じる・開く前の要素へフォーカスを戻す・背景はスクロールしない） ----------
@@ -967,6 +1042,20 @@ async function refresh() {
   render();
 }
 
+// 書込の応答に付いてくる画面の更新分（view）を当てる＝保存後に me.home を取り直さない。view が無い（古いサーバー）ときだけ取り直す
+async function applyView(r) {
+  var v = r && r.view, h = state.home;
+  if (!v || !h) return refresh();
+  if (v.today && v.today !== h.today) return refresh(); // 日付が変わったら全部取り直す
+  if ('session' in v) h.session = v.session;
+  if (v.operators) h.operators = v.operators;
+  if ('on_duty' in v) h.on_duty = v.on_duty;
+  if (v.attendance_today) { var i = h.attendance.findIndex(function (d) { return d.date === v.attendance_today.date; }); if (i >= 0) h.attendance[i] = v.attendance_today; else h.attendance.push(v.attendance_today); }
+  if (v.reports) h.reports = v.reports;
+  if (v.reports_month) h.reports_month = v.reports_month;
+  render();
+}
+
 function pnameOf(id) { var p = (state.home.projects || []).filter(function (x) { return x.project_id === id; })[0]; return p ? p.project_name : id; }
 function todayRecord() {
   var h = state.home; var d = h.attendance.filter(function (x) { return x.date === h.today; })[0];
@@ -975,54 +1064,68 @@ function todayRecord() {
 }
 
 // 今日の状態: 未出勤 → 勤務中 → 架電中 → 勤務中（架電終了）→ 退勤済み
-function renderToday() {
+// 操作の順序: ① 出勤 → ② 案件 → ③ 空き回線 → ④ 架電開始 → ⑤ 架電終了・実績 → ⑥ 退勤（サーバーでも同じ順序を強制）
+function flowState() {
   var h = state.home; var rec = todayRecord(); var cur = h.session;
+  var inT = rec && rec.clock_in, outT = rec && rec.clock_out;
+  var onDuty = h.on_duty !== undefined ? !!h.on_duty : !!(inT && !outT);
+  var proj = cur ? cur.project_id : $('projectSel').value;
+  if (state.selOp && !(h.operators || []).some(function (o) { return o.operator_id === state.selOp && !o.busy; })) state.selOp = null; // 選んだ回線が埋まったら選び直し
+  return { h: h, cur: cur, inT: inT, outT: outT, onDuty: onDuty, proj: proj, op: cur ? cur.operator_id : state.selOp,
+    phase: outT ? 'done' : cur ? 'calling' : inT ? 'working' : 'before' };
+}
+function renderToday() {
+  var f = flowState(), h = f.h, cur = f.cur;
   var conf = h.shifts.filter(function (s) { return s.date === h.today && s.stage === 'CONFIRMED'; })[0];
   var dt = new Date(h.today + 'T00:00:00+09:00');
   $('todayDate').textContent = dt.toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'long', day: 'numeric', weekday: 'short' });
   var shiftText = conf ? (conf.kind === 'PAID_LEAVE' ? '本日は有給です' : '本日のシフト ' + conf.start + '〜' + conf.end) : '本日の確定シフトはありません';
-  var inT = rec && rec.clock_in, outT = rec && rec.clock_out;
-  var phase = outT ? 'done' : cur ? 'calling' : inT ? 'working' : 'before';
-  $('todayHeadline').textContent = { before: '出勤前です', working: '勤務中', calling: '架電中', done: '退勤済み' }[phase];
+  $('todayHeadline').textContent = { before: '出勤前です', working: '勤務中', calling: '架電中', done: '退勤済み' }[f.phase];
   $('todaySub').textContent = shiftText + (cur ? ' ・ ' + labelOf(cur.operator_id) + ' / ' + pnameOf(cur.project_id) : '');
-  var set = function (id, cls, t) { $(id).className = 'step ' + cls; $(id + 'T').textContent = t; };
-  set('stepIn', inT ? 'done' : 'now', inT ? inT + ' 済' : '未');
-  set('stepCall', cur ? 'now' : '', cur ? jstTime(cur.start_at) + '〜' : (inT && !outT ? '回線を選んで開始' : '開始〜終了'));
-  set('stepOut', outT ? 'done' : (inT && !cur ? 'now' : ''), outT ? outT + ' 済' : '未');
-  var box = $('todayActions'); clear(box);
-  var go = function (text, hash, cls) { var b = el('button', text, cls || ''); b.type = 'button'; b.addEventListener('click', function () { location.hash = hash; window.scrollTo({ top: 0 }); }); box.appendChild(b); };
-  if (phase === 'before') { var pb = el('button', '出勤する'); pb.type = 'button'; pb.addEventListener('click', function (ev) { punch(ev.currentTarget, 'in'); }); box.appendChild(pb); go('シフトを見る', '#shift', 'secondary'); }
-  else if (phase === 'working') { go('架電を始める', '#call'); go('退勤する', '#attend', 'secondary'); }
-  else if (phase === 'calling') { go('実績を見る', '#stats'); go('勤怠を見る', '#attend', 'secondary'); }
-  else { go('実績を見る', '#stats'); go('勤怠を見る', '#attend', 'secondary'); }
+  var set = function (id, cls, t) { $(id).className = 'step ' + cls; $(id + 'T').textContent = t; if (cls === 'now') $(id).setAttribute('aria-current', 'step'); else $(id).removeAttribute('aria-current'); };
+  var live = f.onDuty && !cur;
+  set('stepIn', f.inT ? 'done' : 'now', f.inT ? f.inT + ' 済' : '未');
+  set('stepProj', cur ? 'done' : live && !f.proj ? 'now' : live ? 'done' : '', cur || (live && f.proj) ? pnameOf(f.proj) : '—');
+  set('stepLine', cur ? 'done' : live && f.proj && !f.op ? 'now' : live && f.op ? 'done' : '', f.op ? labelOf(f.op) : '—');
+  set('stepCall', cur ? 'now' : live && f.proj && f.op ? 'now' : '', cur ? jstTime(cur.start_at) + '〜' : '—');
+  set('stepEnd', state.endedToday && !cur ? 'done' : '', state.endedToday && !cur ? '済' : '—');
+  set('stepOut', f.outT ? 'done' : (f.onDuty && !cur ? 'now' : ''), f.outT ? f.outT + ' 済' : '未');
+  clear($('todayActions'));
 }
 
-function render() {
-  var h = state.home; if (!h) return;
-  $('who').textContent = h.me.display_name + ' さん';
-  renderToday();
-  // 架電
-  var projSel = $('projectSel'); var keep = projSel.value; clear(projSel);
+function renderFlow() {
+  var f = flowState(), h = f.h, cur = f.cur;
+  var mark = function (id, cls, st) { $(id).className = 'fstep ' + cls; $(id + 's').textContent = st || ''; };
+  // ① 出勤
+  $('flowIn').classList.toggle('hidden', !!f.inT);
+  $('flowIn').disabled = !!f.inT;
+  mark('fs1', f.inT ? 'done' : 'now', f.inT ? f.inT + ' に出勤' : '未');
+  // ② 案件（出勤前は選べない。架電中は切替先を選べる）
+  var projSel = $('projectSel'); var keep = cur ? cur.project_id : projSel.value; clear(projSel);
+  var ph = el('option', '案件を選んでください'); ph.value = ''; projSel.appendChild(ph);
   h.projects.forEach(function (p) { var o = el('option', p.project_name); o.value = p.project_id; projSel.appendChild(o); });
-  if (h.session) projSel.value = h.session.project_id; else if (keep) projSel.value = keep;
-  var cur = h.session;
-  $('sessionNow').textContent = cur ? ('架電中: ' + labelOf(cur.operator_id) + ' / ' + pnameOf(cur.project_id) + '（' + jstTime(cur.start_at) + '〜）') : '架電していません。';
-  $('liveBox').classList.toggle('hidden', !cur);
-  $('idleBox').classList.toggle('hidden', !!cur);
-  $('idleBox').textContent = '架電していません。案件を選び、空いている回線の「ここで開始」を押してから Zoom で発信してください。';
-  if (cur) startLiveTimer(cur.start_at); else stopLiveTimer();
+  projSel.value = keep && h.projects.some(function (p) { return p.project_id === keep; }) ? keep : '';
+  if (cur && state.switchTo && state.switchTo !== cur.project_id) projSel.value = state.switchTo;
+  projSel.disabled = !f.onDuty;
+  var proj = cur ? cur.project_id : projSel.value;
+  mark('fs2', !f.onDuty ? 'locked' : (proj ? 'done' : 'now'), proj ? pnameOf(proj) : '');
+  $('fs2h').textContent = !f.onDuty ? (f.outT ? '退勤済みです' : '先に ① 出勤してください') : cur ? '架電中に案件を変えるときは、選んでから「選んだ案件に切り替える」' : '';
+  // ③ 空き回線（案件を選ぶまでは選べない）
   var grid = $('opGrid'); clear(grid);
+  var canPick = f.onDuty && !cur && !!proj;
   h.operators.forEach(function (o) {
-    var box = el('div', null, 'op' + (o.mine ? ' mine' : o.busy ? ' busy' : ''));
+    var picked = !cur && state.selOp === o.operator_id;
+    var box = el('div', null, 'op' + (o.mine ? ' mine' : o.busy ? ' busy' : '') + (picked ? ' picked' : ''));
     box.appendChild(el('div', o.label, 'name'));
     if (o.zoom_extension || o.zoom_phone_number) box.appendChild(el('div', [o.zoom_extension ? '内線' + o.zoom_extension : '', o.zoom_phone_number].filter(Boolean).join(' / '), 'muted'));
-    box.appendChild(el('div', o.mine ? '自分が使用中' : o.busy ? '使用中' : '空き', 'state'));
+    box.appendChild(el('div', o.mine ? '自分が使用中' : o.busy ? '使用中' : picked ? '選択中' : '空き', 'state'));
     if (!cur && !o.busy) {
-      var b = el('button', 'ここで開始'); b.type = 'button';
-      b.addEventListener('click', function () { startSession(b, o.operator_id, false); });
+      var b = el('button', picked ? '選択中' : 'この回線を選ぶ', picked ? '' : 'secondary'); b.type = 'button';
+      b.setAttribute('aria-pressed', picked ? 'true' : 'false'); b.disabled = !canPick;
+      b.addEventListener('click', function () { state.selOp = o.operator_id; render(); $('startBtn').focus(); });
       box.appendChild(b);
     } else if (!cur && o.busy) {
-      var t = el('button', '引き継いで開始', 'secondary'); t.type = 'button';
+      var t = el('button', '引き継いで開始', 'secondary'); t.type = 'button'; t.disabled = !canPick;
       t.addEventListener('click', function () {
         if (confirm('前の利用者が終了していない可能性があります。前のセッションを終了して引き継ぎますか？（管理者に記録されます）')) startSession(t, o.operator_id, true);
       });
@@ -1031,9 +1134,39 @@ function render() {
     grid.appendChild(box);
   });
   if (!h.operators.length) grid.appendChild(el('div', '利用できる回線がありません。管理者に確認してください', 'empty'));
-  $('endBtn').classList.toggle('hidden', !cur);
+  var op = cur ? cur.operator_id : state.selOp;
+  mark('fs3', cur ? 'done' : !canPick ? 'locked' : (op ? 'done' : 'now'), op ? labelOf(op) : '');
+  $('fs3h').textContent = cur ? '' : !f.onDuty ? '先に ① 出勤してください' : !proj ? '先に ② 案件を選んでください' : '';
+  // ④ 架電開始
+  $('sessionNow').textContent = cur ? ('架電中: ' + labelOf(cur.operator_id) + ' / ' + pnameOf(cur.project_id) + '（' + jstTime(cur.start_at) + '〜）') : '架電していません。';
+  $('liveBox').classList.toggle('hidden', !cur);
+  $('idleBox').classList.toggle('hidden', !!cur);
+  $('idleBox').textContent = '架電していません。① 出勤 → ② 案件 → ③ 回線 を選んでから「架電を開始」を押し、Zoom で発信してください。';
+  if (cur) startLiveTimer(cur.start_at); else stopLiveTimer();
+  var ready = f.onDuty && !cur && !!proj && !!op;
+  $('startBtn').classList.toggle('hidden', !!cur);
+  $('startBtn').disabled = !ready;
   $('switchBtn').classList.toggle('hidden', !cur);
+  $('switchBtn').disabled = !cur || !projSel.value || projSel.value === cur.project_id;
+  mark('fs4', cur ? 'now' : ready ? 'now' : 'locked', cur ? jstTime(cur.start_at) + '〜 架電中' : '');
+  $('fs4h').textContent = cur ? '' : !f.onDuty ? '① 出勤してください' : !proj ? '② 案件を選んでください' : !op ? '③ 空いている回線を選んでください' : '準備ができました。押してから Zoom で発信してください';
+  // ⑤ 終了・実績
+  $('endBtn').classList.toggle('hidden', !cur);
+  mark('fs5', cur ? 'now' : state.endedToday ? 'done' : 'locked', state.endedToday && !cur ? '終了済み' : '');
+  // ⑥ 退勤（架電中はできない）
+  $('flowOut').disabled = !f.onDuty || !!cur; $('flowBreak').disabled = !f.onDuty || !!cur;
+  mark('fs6', f.outT ? 'done' : (!f.onDuty || cur) ? 'locked' : 'now', f.outT ? f.outT + ' に退勤' : '');
+  $('fs6h').textContent = f.outT ? '' : cur ? '架電を終了してから退勤できます' : !f.inT ? '出勤していません' : '';
+  // 勤怠タブの打刻ボタンも同じ条件
+  $('punchIn').disabled = !!f.inT; $('punchOut').disabled = !f.onDuty || !!cur;
   if (cur) startHeartbeat(); else stopHeartbeat();
+}
+
+function render() {
+  var h = state.home; if (!h) return;
+  $('who').textContent = h.me.display_name + ' さん';
+  renderFlow();
+  renderToday();
   // シフト
   renderPeriods(h);
   renderMyShifts(h);
@@ -1061,31 +1194,49 @@ function startLiveTimer(startIso) {
 function stopLiveTimer() { if (state.liveTimer) { clearInterval(state.liveTimer); state.liveTimer = null; } }
 
 function startSession(btn, opId, takeover) {
+  var proj = $('projectSel').value;
+  if (!proj) { opStatus('ng', '② 案件を選んでください'); return; }
+  if (!opId) { opStatus('ng', '③ 空いている回線を選んでください'); return; }
   guarded(btn, async function () {
-    await api('session.start', { operator_id: opId, project_id: $('projectSel').value, takeover: takeover });
-    await refresh(); toast('架電を開始しました。Zoom で発信してください');
-  });
+    var r;
+    try { r = await api('session.start', { operator_id: opId, project_id: proj, takeover: takeover }); }
+    catch (e) { if (e.code === 'OPERATOR_BUSY' || e.code === 'NOT_CLOCKED_IN') { state.selOp = null; refresh().catch(function () {}); } throw e; } // 先に埋まった・出勤前 → 最新の状態に
+    state.selOp = null; await applyView(r);
+    toast('架電を開始しました。Zoom で発信してください');
+    return '架電を開始しました（' + labelOf(opId) + ' / ' + pnameOf(proj) + '）。Zoom で発信してください';
+  }, null, '架電を開始しています');
 }
+$('startBtn').addEventListener('click', function (ev) { startSession(ev.currentTarget, state.selOp, false); });
+$('projectSel').addEventListener('change', function () {
+  if (state.home && state.home.session) state.switchTo = $('projectSel').value; else state.selOp = state.selOp; // 案件を選ぶと ③ の回線が選べるようになる
+  render();
+});
 $('switchBtn').addEventListener('click', function (ev) {
+  var proj = $('projectSel').value;
   guarded(ev.currentTarget, async function () {
-    var r = await api('session.switch', { project_id: $('projectSel').value });
-    await refresh(); toast(r.idempotent ? 'すでにこの案件です' : '案件を切り替えました');
-  });
+    var r = await api('session.switch', { project_id: proj });
+    state.switchTo = null; await applyView(r); toast(r.idempotent ? 'すでにこの案件です' : '案件を切り替えました');
+    return r.idempotent ? 'すでにこの案件です' : '案件を「' + pnameOf(proj) + '」に切り替えました';
+  }, null, '案件を切り替えています');
 });
 $('endBtn').addEventListener('click', function (ev) {
   var pj = state.home && state.home.session && state.home.session.project_id;
   guarded(ev.currentTarget, async function () {
-    await api('session.end', {}); await refresh(); toast('架電を終了しました');
+    var r = await api('session.end', {}); state.endedToday = true; await applyView(r); toast('架電を終了しました');
     // 終了は済んでから、営業実績の入力へ案内する（終了の操作は妨げない）
     $('afterCall').dataset.project = pj || ''; $('afterCall').classList.remove('hidden');
-  });
+    return '架電を終了しました。続けて ⑤ 営業実績を入力してください';
+  }, null, '架電を終了しています');
 });
-$('afterCallGo').addEventListener('click', function (ev) { $('afterCall').classList.add('hidden'); location.hash = '#stats'; openReport(ev.currentTarget, { project_id: $('afterCall').dataset.project }); });
+$('reportGo').addEventListener('click', function (ev) { state.reportFromFlow = true; location.hash = '#stats'; openReport(ev.currentTarget, { project_id: (state.home && state.home.session && state.home.session.project_id) || $('afterCall').dataset.project || '' }); });
+$('flowIn').addEventListener('click', function (ev) { punch(ev.currentTarget, 'in'); });
+$('flowOut').addEventListener('click', function (ev) { punch(ev.currentTarget, 'out', $('flowBreak').value); });
+$('afterCallGo').addEventListener('click', function (ev) { $('afterCall').classList.add('hidden'); state.reportFromFlow = true; location.hash = '#stats'; openReport(ev.currentTarget, { project_id: $('afterCall').dataset.project }); });
 $('afterCallLater').addEventListener('click', function () { $('afterCall').classList.add('hidden'); });
 
 function startHeartbeat() {
   if (state.hbTimer) return;
-  state.hbTimer = setInterval(sendHeartbeat, 60000);
+  state.hbTimer = setInterval(sendHeartbeat, 180000); // 3 分ごと（15 分途絶で自動終了）。1 分ごとだと同時に使う人数が増えたときにロック待ちが増える
 }
 function stopHeartbeat() { if (state.hbTimer) { clearInterval(state.hbTimer); state.hbTimer = null; } }
 async function sendHeartbeat() {
@@ -1400,19 +1551,18 @@ function renderMyShifts(h) {
 }
 
 // ---------- 勤怠 ----------
-function punch(btn, kind) {
+function punch(btn, kind, breakMin) {
+  if (kind === 'out' && state.home && state.home.session) { opStatus('ng', '架電中です。先に「架電を終了」を押してから退勤してください'); return; }
   guarded(btn, async function () {
-    var r = await api('attendance.punch', kind === 'in' ? { kind: 'in' } : { kind: 'out', break_minutes: $('breakMin').value });
-    await refresh();
-    if (kind === 'in') toast(r.idempotent ? '本日はすでに出勤済みです' : '出勤を記録しました（' + r.attendance.clock_in + '）。架電は「架電」タブで開始します');
-    else toast('退勤を記録しました（' + r.attendance.clock_out + '）');
-  });
+    var r = await api('attendance.punch', kind === 'in' ? { kind: 'in' } : { kind: 'out', break_minutes: breakMin !== undefined ? breakMin : $('breakMin').value });
+    await applyView(r);
+    if (kind === 'in') { toast(r.idempotent ? '本日はすでに出勤済みです' : '出勤を記録しました（' + r.attendance.clock_in + '）。続けて ② 案件を選んでください'); return r.idempotent ? '本日はすでに出勤済みです（' + r.attendance.clock_in + '）' : '出勤を記録しました（' + r.attendance.clock_in + '）。続けて ② 案件を選んでください'; }
+    toast(r.idempotent ? '本日はすでに退勤済みです（' + r.attendance.clock_out + '）' : '退勤を記録しました（' + r.attendance.clock_out + '）');
+    return r.idempotent ? '本日はすでに退勤済みです（' + r.attendance.clock_out + '）' : '退勤を記録しました（' + r.attendance.clock_out + '）';
+  }, null, kind === 'in' ? '出勤を記録しています' : '退勤を記録しています');
 }
 $('punchIn').addEventListener('click', function (ev) { punch(ev.currentTarget, 'in'); });
-$('punchOut').addEventListener('click', function (ev) {
-  if (state.home && state.home.session && !confirm('架電セッションが開いたままです。先に「架電を終了」を押すことをおすすめします。このまま退勤しますか？')) return;
-  punch(ev.currentTarget, 'out');
-});
+$('punchOut').addEventListener('click', function (ev) { punch(ev.currentTarget, 'out'); });
 
 // 日ごとの状態（サーバーの判定ラベル＋記録）。未提出・打刻漏れは欠勤として出さない。欠勤は管理者が確定した日だけ
 function dayStatus(d, today) {
@@ -1778,7 +1928,7 @@ $('repSave').addEventListener('click', function (ev) {
   var p = repState.payload; if (!p) return;
   guarded(ev.currentTarget, async function () {
     var r = await api('report.submit', p, { requestId: repState.rid });
-    state.home = await api('me.home', {}); render();
+    await applyView(r);
     $('repDoneTitle').textContent = r.unchanged ? '変更はありませんでした' : r.corrected ? '修正を保存しました' : '保存しました';
     $('repDoneText').textContent = dayText(p.date) + '・' + pnameOf(p.project_id) + '（第' + r.version + '版）をサーバーに保存し、保存を確認しました。' + (r.corrected ? '修正前の値は履歴に残っています。' : '');
     repStep(3); repState.payload = null;
@@ -1793,7 +1943,10 @@ $('repSave').addEventListener('click', function (ev) {
   });
 });
 $('repAnother').addEventListener('click', function (ev) { var d = $('repDate').value; buildRepProjects(''); $('repDate').value = d; loadRepEntry(); repStep(1); document.querySelector('input[name=repProject]') && document.querySelector('input[name=repProject]').focus(); });
-$('reportDialog').onclosed = function () { repState.payload = null; };
+$('reportDialog').onclosed = function () {
+  repState.payload = null;
+  if (state.reportFromFlow) { state.reportFromFlow = false; location.hash = '#call'; } // 架電の流れから開いたときは ⑥ 退勤 へ戻る
+};
 
 // ---------- パスワード変更（本人再認証 → 新パスワード → 完了。画面・勤務状態はそのまま） ----------
 function renderPw(h) {
