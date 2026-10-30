@@ -167,6 +167,8 @@
   @keyframes pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ok) 60%, transparent); } 70% { box-shadow: 0 0 0 10px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
   .live .timer { margin-left: auto; font-variant-numeric: tabular-nums; font-weight: 800; font-size: 18px; }
   #sessionNow { margin: 0; font-weight: 700; }
+  .sess-alert { padding: 14px; border-radius: var(--r-lg); background: var(--warn-soft); color: var(--warn); margin-bottom: 12px; font-size: 14px; font-weight: 700; }
+  .sess-alert p { margin: 0 0 10px; } .sess-alert .row { display: flex; gap: 10px; flex-wrap: wrap; }
   .idle { padding: 14px; border-radius: var(--r-lg); background: var(--surface2); color: var(--text2); margin-bottom: 12px; font-size: 14px; }
   .ops { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
   .op { border: 1px solid var(--border); border-radius: var(--r-lg); padding: 12px; display: flex; flex-direction: column; gap: 6px; background: var(--surface); transition: border-color .15s, box-shadow .15s; }
@@ -520,6 +522,7 @@
         </section>
         <section class="fstep" id="fs4" aria-labelledby="fs4t">
           <div class="fhead"><span class="num" aria-hidden="true">4</span><span id="fs4t">架電を開始</span><span class="fstate" id="fs4s"></span></div>
+          <div id="sessAlert" class="sess-alert hidden" role="alert"><p id="sessAlertMsg"></p><div class="row"><button type="button" id="sessResume" class="small">同じ案件・回線で再開する</button><button type="button" id="sessAck" class="small secondary">確認しました</button></div></div>
           <div id="liveBox" class="live hidden"><span class="dot" aria-hidden="true"></span><p id="sessionNow"></p><span class="timer" id="liveTimer"></span></div>
           <div id="idleBox" class="idle"></div>
           <button id="startBtn" type="button" class="block">架電を開始</button>
@@ -537,7 +540,7 @@
           <div class="out-row"><label for="flowBreak">休憩（分）</label><input id="flowBreak" type="number" inputmode="numeric" min="0" max="600" step="5" value="60"><button id="flowOut" type="button" class="secondary">退勤する</button></div>
           <p class="fhint" id="fs6h"></p>
         </section>
-        <p class="muted" style="margin:12px 0 0">開始・終了の時刻はサーバーの時刻で記録されます。画面を閉じても15分で自動終了します（要確認として記録）。</p>
+        <p class="muted" style="margin:12px 0 0">開始・終了の時刻はサーバーの時刻で記録されます。Zoom に切り替えても・画面を閉じても・スマホがスリープしても架電は続きます。終わったら必ず「架電を終了」を押してください。</p>
       </div>
     </div>
 
@@ -1038,7 +1041,11 @@ document.addEventListener('focusout', function () {
 });
 
 async function refresh() {
+  var prev = state.home && state.home.session;
   state.home = await api('me.home', {});
+  // この画面では架電中だったのにサーバーでは終了している（本人以外の終了は session_notice で理由が来る）→ 黙って消さずに警告と再開を出す
+  if (state.home.session) state.lostSession = null;
+  else if (prev && !state.home.session_notice) state.lostSession = prev;
   render();
 }
 
@@ -1046,8 +1053,10 @@ async function refresh() {
 async function applyView(r) {
   var v = r && r.view, h = state.home;
   if (!v || !h) return refresh();
-  if (v.today && v.today !== h.today) return refresh(); // 日付が変わったら全部取り直す
+  if (v.today && v.today !== h.today) { if ('session' in v) h.session = v.session; return refresh(); } // 日付が変わったら全部取り直す（自分の操作の結果を「食い違い」と見なさない）
   if ('session' in v) h.session = v.session;
+  if ('session_notice' in v) h.session_notice = v.session_notice;
+  if (v.session) state.lostSession = null;
   if (v.operators) h.operators = v.operators;
   if ('on_duty' in v) h.on_duty = v.on_duty;
   if (v.attendance_today) { var i = h.attendance.findIndex(function (d) { return d.date === v.attendance_today.date; }); if (i >= 0) h.attendance[i] = v.attendance_today; else h.attendance.push(v.attendance_today); }
@@ -1124,25 +1133,20 @@ function renderFlow() {
       b.setAttribute('aria-pressed', picked ? 'true' : 'false'); b.disabled = !canPick;
       b.addEventListener('click', function () { state.selOp = o.operator_id; render(); $('startBtn').focus(); });
       box.appendChild(b);
-    } else if (!cur && o.busy) {
-      var t = el('button', '引き継いで開始', 'secondary'); t.type = 'button'; t.disabled = !canPick;
-      t.addEventListener('click', function () {
-        if (confirm('前の利用者が終了していない可能性があります。前のセッションを終了して引き継ぎますか？（管理者に記録されます）')) startSession(t, o.operator_id, true);
-      });
-      box.appendChild(t);
     }
     grid.appendChild(box);
   });
   if (!h.operators.length) grid.appendChild(el('div', '利用できる回線がありません。管理者に確認してください', 'empty'));
   var op = cur ? cur.operator_id : state.selOp;
   mark('fs3', cur ? 'done' : !canPick ? 'locked' : (op ? 'done' : 'now'), op ? labelOf(op) : '');
-  $('fs3h').textContent = cur ? '' : !f.onDuty ? '先に ① 出勤してください' : !proj ? '先に ② 案件を選んでください' : '';
+  $('fs3h').textContent = cur ? '' : !f.onDuty ? '先に ① 出勤してください' : !proj ? '先に ② 案件を選んでください' : h.operators.some(function (o) { return o.busy && !o.mine; }) ? '「使用中」の回線が実際には使われていないときは、管理者に連絡してください（管理者が終了します）' : '';
   // ④ 架電開始
   $('sessionNow').textContent = cur ? ('架電中: ' + labelOf(cur.operator_id) + ' / ' + pnameOf(cur.project_id) + '（' + jstTime(cur.start_at) + '〜）') : '架電していません。';
   $('liveBox').classList.toggle('hidden', !cur);
   $('idleBox').classList.toggle('hidden', !!cur);
   $('idleBox').textContent = '架電していません。① 出勤 → ② 案件 → ③ 回線 を選んでから「架電を開始」を押し、Zoom で発信してください。';
   if (cur) startLiveTimer(cur.start_at); else stopLiveTimer();
+  renderSessAlert(f, cur);
   var ready = f.onDuty && !cur && !!proj && !!op;
   $('startBtn').classList.toggle('hidden', !!cur);
   $('startBtn').disabled = !ready;
@@ -1193,20 +1197,52 @@ function startLiveTimer(startIso) {
 }
 function stopLiveTimer() { if (state.liveTimer) { clearInterval(state.liveTimer); state.liveTimer = null; } }
 
-function startSession(btn, opId, takeover) {
+// ④ の警告: 本人以外が架電を終了した（管理者・終了忘れの自動終了・旧方式の心拍途絶）／この画面とサーバーの状態が違う
+var NOTICE_TEXT = {
+  admin_end: '管理者が架電を終了しました',
+  day_rollover: '前日の架電が終了されていなかったため、自動で終了しました',
+  clocked_out: '退勤が記録されたため、架電を自動で終了しました',
+  member_inactive: '在籍の状態が変わったため、架電を終了しました',
+  timed_out: '画面からの通信が途絶えたため、架電が終了扱いになりました（10/30 以前の方式）',
+};
+function renderSessAlert(f, cur) {
+  var h = state.home, n = h.session_notice, lost = state.lostSession, a = null;
+  if (!cur && n && load('ism_notice_seen') !== n.session_id) a = { id: n.session_id, msg: (NOTICE_TEXT[n.kind] || '架電が終了しています') + '（' + labelOf(n.operator_id) + ' / ' + pnameOf(n.project_id) + '・' + jstTime(n.start_at) + '〜' + (n.end_at ? jstTime(n.end_at) : '') + '）', op: n.operator_id, pj: n.project_id };
+  else if (!cur && lost) a = { id: '', msg: 'この画面では架電中でしたが、サーバーでは架電が終了しています（別の画面で終了した可能性があります）。続けて発信する場合は再開してください。（' + labelOf(lost.operator_id) + ' / ' + pnameOf(lost.project_id) + '）', op: lost.operator_id, pj: lost.project_id };
+  state.sessAlert = a;
+  $('sessAlert').classList.toggle('hidden', !a);
+  if (!a) return;
+  var line = (h.operators || []).filter(function (o) { return o.operator_id === a.op; })[0];
+  var free = line && !line.busy;
+  $('sessAlertMsg').textContent = a.msg + (!f.onDuty ? ' 再開するには先に ① 出勤してください。' : !free ? ' この回線はいま使用中のため、空いている回線を選んで開始してください。' : ' この間の発信は記録と照合して管理者が確認します。');
+  $('sessResume').disabled = !f.onDuty || !free || !(h.projects || []).some(function (p) { return p.project_id === a.pj; });
+}
+$('sessResume').addEventListener('click', function (ev) {
+  var a = state.sessAlert; if (!a) return;
+  $('projectSel').value = a.pj; state.selOp = a.op;
+  if (a.id) store('ism_notice_seen', a.id);
+  state.lostSession = null;
+  startSession(ev.currentTarget, a.op);
+});
+$('sessAck').addEventListener('click', function () {
+  var a = state.sessAlert; if (a && a.id) store('ism_notice_seen', a.id);
+  state.lostSession = null; render();
+});
+
+function startSession(btn, opId) {
   var proj = $('projectSel').value;
   if (!proj) { opStatus('ng', '② 案件を選んでください'); return; }
   if (!opId) { opStatus('ng', '③ 空いている回線を選んでください'); return; }
   guarded(btn, async function () {
     var r;
-    try { r = await api('session.start', { operator_id: opId, project_id: proj, takeover: takeover }); }
+    try { r = await api('session.start', { operator_id: opId, project_id: proj }); }
     catch (e) { if (e.code === 'OPERATOR_BUSY' || e.code === 'NOT_CLOCKED_IN') { state.selOp = null; refresh().catch(function () {}); } throw e; } // 先に埋まった・出勤前 → 最新の状態に
     state.selOp = null; await applyView(r);
     toast('架電を開始しました。Zoom で発信してください');
     return '架電を開始しました（' + labelOf(opId) + ' / ' + pnameOf(proj) + '）。Zoom で発信してください';
   }, null, '架電を開始しています');
 }
-$('startBtn').addEventListener('click', function (ev) { startSession(ev.currentTarget, state.selOp, false); });
+$('startBtn').addEventListener('click', function (ev) { startSession(ev.currentTarget, state.selOp); });
 $('projectSel').addEventListener('change', function () {
   if (state.home && state.home.session) state.switchTo = $('projectSel').value; else state.selOp = state.selOp; // 案件を選ぶと ③ の回線が選べるようになる
   render();
@@ -1236,12 +1272,12 @@ $('afterCallLater').addEventListener('click', function () { $('afterCall').class
 
 function startHeartbeat() {
   if (state.hbTimer) return;
-  state.hbTimer = setInterval(sendHeartbeat, 180000); // 3 分ごと（15 分途絶で自動終了）。1 分ごとだと同時に使う人数が増えたときにロック待ちが増える
+  state.hbTimer = setInterval(sendHeartbeat, 180000); // 3 分ごと。通信状態の参考（届かなくても架電は終了しない）。1 分ごとだと同時に使う人数が増えたときにロック待ちが増える
 }
 function stopHeartbeat() { if (state.hbTimer) { clearInterval(state.hbTimer); state.hbTimer = null; } }
 async function sendHeartbeat() {
   try { await api('session.heartbeat', {}); }
-  catch (e) { if (e.code === 'NO_OPEN_SESSION') { stopHeartbeat(); toast('セッションが自動終了していました。必要なら開始し直してください', true); refresh().catch(function () {}); } }
+  catch (e) { if (e.code === 'NO_OPEN_SESSION') { stopHeartbeat(); refresh().catch(function () {}); } } // 理由と再開の操作は ④ の警告に出す
 }
 document.addEventListener('visibilitychange', function () { if (!document.hidden && state.token) { if (state.hbTimer) sendHeartbeat(); refresh().catch(function () {}); } });
 
