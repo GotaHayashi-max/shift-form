@@ -2,898 +2,720 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>シフト・勤怠管理｜ネクスゲート</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#f6f8fc" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b1220" media="(prefers-color-scheme: dark)">
+<title>シフト・勤怠｜ネクスゲート</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap');
-
+  /* デザイントークンはマイページ（mypage/index.html）と同じ値にそろえている */
   :root {
-    --bg: #0a0a0f;
-    --surface: #13131a;
-    --surface2: #1c1c26;
-    --border: #2a2a38;
-    --accent-shift: #00B4A0;
-    --accent-attend: #008F80;
-    --accent2-shift: #00C8B4;
-    --accent2-attend: #80DDD4;
-    --text: #e8e8f0;
-    --text2: #7070a0;
-    --success: #34d399;
-    --error: #f87171;
-    --radius: 12px;
+    --navy: #0f1d3a;
+    --bg: #f6f8fc; --bg-glow1: rgba(37, 99, 235, .07); --bg-glow2: rgba(14, 165, 233, .05);
+    --surface: #ffffff; --surface2: #f2f5fa; --border: #e3e8f1; --text: #0f1d3a; --text2: #55617a; --text3: #8792a8;
+    --accent: #2563eb; --accent-soft: #e8effe; --accent-text: #ffffff;
+    --ok: #0f7a55; --ok-soft: #e2f4ec; --warn: #a35a00; --warn-soft: #fdf0dd; --ng: #c0362c; --ng-soft: #fbe9e7;
+    --info: #2563eb; --info-soft: #e8effe; --mute: #55617a; --mute-soft: #eef1f6; --sat: #2563eb;
+    --hero1: #0f1d3a; --hero2: #1d4ed8;
+    --shadow: 0 1px 2px rgba(15, 29, 58, .04), 0 6px 20px rgba(15, 29, 58, .06);
+    --shadow-lg: 0 12px 32px rgba(15, 29, 58, .16);
+    --ring: 0 0 0 3px var(--accent-soft);
+    --r-sm: 10px; --r-md: 12px; --r-lg: 14px; --radius: 18px; --r-pill: 999px;
+    --tabbar: 64px; --header-h: 64px;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --navy: #e6ecf6;
+      --bg: #0b1220; --bg-glow1: rgba(59, 130, 246, .12); --bg-glow2: rgba(14, 165, 233, .06);
+      --surface: #121a2b; --surface2: #18233a; --border: #24314b; --text: #e6ecf6; --text2: #a3afc4; --text3: #74819a;
+      --accent: #60a5fa; --accent-soft: #172a4a; --accent-text: #0b1220;
+      --ok: #4fc795; --ok-soft: #12302a; --warn: #f0b35c; --warn-soft: #33270f; --ng: #ff8a7f; --ng-soft: #3a1b19;
+      --info: #7cb3ff; --info-soft: #172a4a; --mute: #a3afc4; --mute-soft: #1d2638; --sat: #8fb0ff;
+      --hero1: #13254d; --hero2: #1d4ed8;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .35), 0 6px 20px rgba(0, 0, 0, .25); --shadow-lg: 0 12px 32px rgba(0, 0, 0, .5);
+      color-scheme: dark; }
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; min-height: 100vh; background: radial-gradient(1100px 520px at 100% -8%, var(--bg-glow1), transparent 62%), radial-gradient(800px 460px at -12% 4%, var(--bg-glow2), transparent 58%), var(--bg); background-attachment: fixed; color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", "Segoe UI", sans-serif; font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  svg.i { width: 20px; height: 20px; flex: 0 0 auto; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; vertical-align: -4px; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .hidden { display: none !important; }
+
+  header { position: sticky; top: 0; z-index: 10; background: var(--bg); min-height: var(--header-h); border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+    padding: calc(10px + env(safe-area-inset-top)) 16px 10px; display: flex; align-items: center; gap: 10px; }
+  .logo { width: 32px; height: 32px; border-radius: var(--r-sm); background: linear-gradient(140deg, var(--hero1), var(--hero2)); box-shadow: 0 4px 12px rgba(29, 78, 216, .25); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 15px; flex: 0 0 auto; }
+  header h1 { font-size: 16px; margin: 0; color: var(--navy); }
+  #who { display: block; font-size: 12px; color: var(--text2); }
+
+  main { max-width: 760px; margin: 0 auto; padding: 12px 16px calc(var(--tabbar) + 28px + env(safe-area-inset-bottom)); }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 14px; box-shadow: var(--shadow); }
+  .card h2 { font-size: 16px; margin: 0 0 4px; display: flex; align-items: center; gap: 8px; color: var(--navy); }
+  .card h2 svg.i { color: var(--accent); }
+  label { display: block; font-size: 13px; color: var(--text2); margin: 12px 0 6px; font-weight: 600; }
+  input, select, textarea { width: 100%; font-size: 16px; padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface); color: var(--text); font-family: inherit; transition: border-color .15s, box-shadow .15s; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: var(--ring); }
+  input.invalid, select.invalid { border-color: var(--ng); box-shadow: 0 0 0 3px var(--ng-soft); }
+  .ferr { color: var(--ng); font-size: 12px; font-weight: 700; margin: 6px 0 0; }
+  .ferr[hidden] { display: none; }
+  .muted { color: var(--text2); font-size: 13px; }
+  a { color: var(--accent); }
+
+  button { font-family: inherit; font-size: 15px; font-weight: 700; padding: 12px 18px; border-radius: var(--r-md); border: 1px solid var(--accent); background: var(--accent); color: var(--accent-text);
+    cursor: pointer; min-height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: transform .08s ease, filter .15s, background .15s, opacity .15s; touch-action: manipulation; }
+  button:hover:not(:disabled) { filter: brightness(1.04); }
+  button:active:not(:disabled) { transform: scale(.97); filter: brightness(.95); }
+  button.secondary { background: var(--surface); color: var(--accent); border-color: var(--border); }
+  button.block { width: 100%; }
+  button.small { min-height: 36px; padding: 6px 12px; font-size: 13px; border-radius: var(--r-sm); }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  button[aria-busy="true"] { position: relative; color: transparent !important; }
+  button[aria-busy="true"]::after { content: ""; position: absolute; inset: 0; margin: auto; width: 18px; height: 18px; border-radius: 50%; border: 2px solid #fff; border-right-color: transparent; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .chip { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; padding: 1px 8px; border-radius: var(--r-pill); background: var(--surface2); color: var(--text2); font-size: 11px; font-weight: 700; }
+  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px 3px 7px; border-radius: var(--r-pill); font-size: 12px; font-weight: 700; line-height: 1.35; white-space: nowrap; background: var(--mute-soft); color: var(--mute); }
+  .badge svg.i { width: 13px; height: 13px; stroke-width: 2.6; vertical-align: 0; }
+  .badge.ok { color: var(--ok); background: var(--ok-soft); } .badge.warn { color: var(--warn); background: var(--warn-soft); } .badge.ng { color: var(--ng); background: var(--ng-soft); }
+
+  /* 名前 */
+  .who-card { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; }
+  .who-card label { margin-top: 0; }
+  .who-card .ferr { grid-column: 1 / -1; }
+
+  /* タブ（スマホは下部固定・PC はヘッダー直下） */
+  nav.tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; display: grid; grid-template-columns: 1fr 1fr;
+    background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid var(--border); padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); }
+  nav.tabs a { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 4px; border-radius: var(--r-md); color: var(--text3); text-decoration: none; font-size: 11px; font-weight: 700; }
+  nav.tabs a svg.i { width: 22px; height: 22px; }
+  nav.tabs a[aria-current="page"] { color: var(--accent); background: var(--accent-soft); }
+  @media (min-width: 840px) {
+    .tabwrap { position: sticky; top: var(--header-h); z-index: 9; background: var(--bg); margin: 0 -16px; padding: 0 16px 12px; }
+    nav.tabs { position: static; border: 1px solid var(--border); border-radius: var(--r-lg); padding: 6px; box-shadow: var(--shadow); background: var(--surface); }
+    nav.tabs a { flex-direction: row; justify-content: center; font-size: 14px; gap: 8px; }
+    main { padding-bottom: 40px; }
   }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  /* シフト */
+  .period-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 10px 0 2px; font-size: 13px; }
+  .notice { display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border-radius: var(--r-md); background: var(--info-soft); color: var(--info); font-size: 13px; font-weight: 600; margin: 10px 0 0; }
+  .notice svg.i { width: 18px; height: 18px; margin-top: 1px; }
+  .notice button { margin-left: auto; }
+  .bulk { border: 1px solid var(--border); border-radius: var(--r-lg); background: var(--surface2); margin: 14px 0 6px; }
+  .bulk > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 12px 14px; font-weight: 700; font-size: 14px; min-height: 48px; }
+  .bulk > summary::-webkit-details-marker { display: none; }
+  .bulk > summary .chev { margin-left: auto; transition: transform .2s; color: var(--text3); }
+  .bulk[open] > summary .chev { transform: rotate(180deg); }
+  .bulk .bulk-body { padding: 0 14px 14px; }
+  .times-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center; }
+  .seg { display: flex; gap: 6px; flex-wrap: wrap; margin: 4px 0 0; padding: 0; border: 0; }
+  .seg legend { font-size: 13px; color: var(--text2); font-weight: 600; margin: 12px 0 6px; padding: 0; }
+  .seg label { margin: 0; display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 6px 12px; border: 1px solid var(--border); border-radius: var(--r-pill); background: var(--surface); color: var(--text); font-size: 14px; cursor: pointer; }
+  .seg label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+  .seg input { width: auto; margin: 0; accent-color: var(--accent); }
+  .check { display: flex; align-items: center; gap: 8px; margin: 12px 0 0; font-size: 13px; color: var(--text); font-weight: 600; }
+  .check input { width: 20px; height: 20px; margin: 0; accent-color: var(--accent); }
+  .bulk-preview { font-size: 13px; color: var(--text2); margin: 10px 0; }
+  .bulk-preview b { color: var(--text); }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 6px; }
+  .days { display: flex; flex-direction: column; }
+  .day { display: grid; grid-template-columns: 92px 1fr; grid-template-areas: "date kind" ". times" ". err"; column-gap: 10px; align-items: center; padding: 10px 8px; border-bottom: 1px solid var(--border); transition: background .3s; }
+  .day:last-child { border-bottom: none; }
+  .day.day-mark { background: color-mix(in srgb, var(--surface2) 70%, transparent); }
+  .day.changed { box-shadow: inset 3px 0 0 var(--accent); }
+  .day.flash { background: var(--accent-soft); }
+  .day .dcell { grid-area: date; line-height: 1.3; }
+  .day .pick { display: none; }
+  .days.picking .day { grid-template-columns: 34px 84px 1fr; grid-template-areas: "pick date kind" ". . times" ". . err"; }
+  .days.picking .day .pick { display: flex; grid-area: pick; margin: 0; align-items: center; }
+  .day .pick input { width: 22px; height: 22px; margin: 0; accent-color: var(--accent); }
+  .kind-wrap { grid-area: kind; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .kind { display: inline-flex; border: 1px solid var(--border); border-radius: var(--r-md); overflow: hidden; background: var(--surface); }
+  .kind button { min-height: 42px; padding: 6px 14px; border: 0; border-radius: 0; background: transparent; color: var(--text2); font-size: 14px; font-weight: 700; box-shadow: none; }
+  .kind button + button { border-left: 1px solid var(--border); }
+  .kind button[aria-pressed="true"][data-k="WORK"] { background: var(--ok-soft); color: var(--ok); }
+  .kind button[aria-pressed="true"][data-k="OFF"] { background: var(--mute-soft); color: var(--text); }
+  .kind button[aria-pressed="true"]::before { content: "✓"; font-size: 12px; }
+  .kind-wrap .state-text { font-size: 12px; color: var(--text3); font-weight: 600; }
+  .day .times { grid-area: times; display: none; grid-template-columns: 1fr auto 1fr; gap: 6px; align-items: center; margin-top: 8px; max-width: 280px; }
+  .day.st-WORK .times { display: grid; }
+  .day .times select { padding: 9px 8px; border-radius: var(--r-sm); }
+  .day .ferr { grid-area: err; }
+  .d-sun, .d-hol { color: var(--ng); }
+  .hol-name { display: block; font-size: 11px; line-height: 1.2; }
+  @media (min-width: 640px) {
+    .day { grid-template-columns: 110px auto 1fr; grid-template-areas: "date kind times" ". err err"; }
+    .days.picking .day { grid-template-columns: 34px 100px auto 1fr; grid-template-areas: "pick date kind times" ". . err err"; }
+    .day .times { margin-top: 0; }
+  }
+  .dock { position: sticky; bottom: calc(var(--tabbar) + 10px + env(safe-area-inset-bottom)); z-index: 8; display: flex; align-items: center; gap: 12px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 10px 10px 10px 16px; margin: 0 0 14px; box-shadow: var(--shadow-lg); }
+  .dock .prog { flex: 1 1 auto; min-width: 0; }
+  .dock .count { font-weight: 800; font-size: 15px; font-variant-numeric: tabular-nums; }
+  .dock .count b { font-size: 18px; }
+  .dock .sub { font-size: 12px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dock .sub.dirty { color: var(--accent); font-weight: 700; }
+  .dock .bar { height: 4px; border-radius: 4px; background: var(--surface2); margin-top: 6px; overflow: hidden; }
+  .dock .bar span { display: block; height: 100%; background: var(--accent); width: 0; transition: width .25s ease; }
+  .dock button { flex: 0 0 auto; min-width: 112px; }
+  @media (min-width: 840px) { .dock { bottom: 16px; } }
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Noto Sans JP', sans-serif;
-    min-height: 100vh;
-    padding: 24px 16px 80px;
-  }
+  /* 勤怠 */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .grid2 label { margin-top: 12px; }
+  .worked { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-top: 14px; padding: 12px 14px; border-radius: var(--r-md); background: var(--surface2); }
+  .worked span { font-size: 13px; color: var(--text2); font-weight: 600; }
+  .worked b { font-size: 22px; color: var(--navy); font-variant-numeric: tabular-nums; }
+  .hint { background: var(--surface2); border-radius: var(--r-md); padding: 10px 12px; font-size: 13px; color: var(--text2); margin-top: 14px; }
+  .done-mark { width: 56px; height: 56px; border-radius: 50%; margin: 6px auto 10px; display: grid; place-items: center; background: var(--ok-soft); color: var(--ok); }
+  .done-mark svg.i { width: 28px; height: 28px; stroke-width: 2.6; }
+  .done { text-align: center; }
+  .done h2 { justify-content: center; }
 
-  /* ヘッダー */
-  .header {
-    text-align: center;
-    padding: 36px 0 28px;
+  /* 確認シート */
+  dialog.sheet { border: 0; padding: 0; background: var(--surface); color: var(--text); border-radius: calc(var(--radius) + 2px); width: min(520px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); box-shadow: var(--shadow-lg); }
+  dialog.sheet[open] { display: flex; flex-direction: column; animation: pop .2s ease; }
+  dialog.sheet::backdrop { background: rgba(10, 14, 22, .45); }
+  @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
+  .sheet-head { display: flex; align-items: center; gap: 10px; padding: 16px 12px 8px 18px; position: relative; }
+  .sheet-head h2 { margin: 0; font-size: 17px; flex: 1 1 auto; }
+  .sheet-head .x { width: 40px; height: 40px; min-height: 40px; padding: 0; background: transparent; border-color: transparent; color: var(--text2); }
+  .sheet-body { padding: 0 18px 4px; overflow: auto; overscroll-behavior: contain; }
+  .sheet-foot { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; padding: 12px 18px calc(16px + env(safe-area-inset-bottom)); border-top: 1px solid var(--border); }
+  @media (max-width: 639px) {
+    dialog.sheet { margin: auto 0 0; width: 100%; max-width: 100%; border-radius: calc(var(--radius) + 2px) calc(var(--radius) + 2px) 0 0; }
+    .sheet-head::before { content: ""; position: absolute; left: 50%; top: 6px; width: 36px; height: 4px; border-radius: 4px; background: var(--border); transform: translateX(-50%); }
   }
-  .header-badge {
-    display: inline-block;
-    background: linear-gradient(135deg, #00B4A0, #008F80);
-    color: #fff;
-    font-size: 11px;
-    font-family: 'DM Mono', monospace;
-    letter-spacing: 2px;
-    padding: 4px 14px;
-    border-radius: 100px;
-    margin-bottom: 16px;
-  }
-  .header h1 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
-  .header p  { color: var(--text2); font-size: 13px; }
+  .sum-list { max-height: 34vh; overflow: auto; border: 1px solid var(--border); border-radius: var(--r-md); margin: 10px 0; }
+  .sum-list div { display: flex; justify-content: space-between; gap: 10px; padding: 7px 12px; border-bottom: 1px solid var(--border); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .sum-list div:last-child { border-bottom: none; }
+  .sum-list .none { color: var(--text3); }
 
-  /* タブ切り替え */
-  .tabs {
-    display: flex;
-    max-width: 560px;
-    margin: 0 auto 20px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 4px;
-    gap: 4px;
-  }
-  .tab {
-    flex: 1;
-    padding: 12px;
-    border: none;
-    border-radius: 10px;
-    font-family: 'Noto Sans JP', sans-serif;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-    background: transparent;
-    color: var(--text2);
-  }
-  .tab.active-shift {
-    background: var(--accent-shift);
-    color: #fff;
-    box-shadow: 0 4px 16px rgba(0,180,160,0.35);
-  }
-  .tab.active-attend {
-    background: var(--accent-attend);
-    color: #fff;
-    box-shadow: 0 4px 16px rgba(0,143,128,0.35);
-  }
-
-  /* フォームカード */
-  .form-card {
-    max-width: 560px;
-    margin: 0 auto;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 28px 24px;
-    display: none;
-  }
-  .form-card.active { display: block; }
-
-  .section-title {
-    font-size: 11px;
-    font-family: 'DM Mono', monospace;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-bottom: 18px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid var(--border);
-  }
-  .section-title.shift  { color: var(--accent2-shift); }
-  .section-title.attend { color: var(--accent2-attend); }
-
-  .field { margin-bottom: 18px; }
-  .field label {
-    display: block;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text2);
-    margin-bottom: 7px;
-  }
-  .field label .req { color: var(--accent2-shift); margin-left: 4px; }
-  .field label .req.g { color: var(--accent2-attend); }
-
-  .field input,
-  .field select,
-  .field textarea {
-    width: 100%;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    color: var(--text);
-    font-family: 'Noto Sans JP', sans-serif;
-    font-size: 15px;
-    padding: 11px 14px;
-    outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
-    -webkit-appearance: none;
-  }
-  .field input:focus,
-  .field select:focus,
-  .field textarea:focus {
-    border-color: var(--accent-shift);
-    box-shadow: 0 0 0 3px rgba(0,180,160,0.12);
-  }
-  .field.attend input:focus,
-  .field.attend select:focus {
-    border-color: var(--accent-attend);
-    box-shadow: 0 0 0 3px rgba(0,143,128,0.12);
-  }
-  .field select {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%237070a0' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 12px center;
-    padding-right: 36px;
-    cursor: pointer;
-  }
-
-  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-
-  /* シフト希望の曜日グリッド */
-  .day-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-  }
-  .day-item label {
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--text2);
-    margin-bottom: 6px;
-    display: block;
-  }
-  .day-item input {
-    font-size: 13px;
-    padding: 8px 10px;
-    text-align: center;
-  }
-
-  /* 勤怠のセクション区切り */
-  .attend-section {
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 16px;
-  }
-  .attend-section.planned {
-    background: rgba(0,180,160,0.06);
-    border: 1px solid rgba(0,180,160,0.2);
-  }
-  .attend-section.actual {
-    background: rgba(0,143,128,0.06);
-    border: 1px solid rgba(0,143,128,0.2);
-  }
-  .attend-section-title {
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    margin-bottom: 14px;
-  }
-  .attend-section.planned .attend-section-title { color: var(--accent2-shift); }
-  .attend-section.actual  .attend-section-title { color: var(--accent2-attend); }
-
-  /* 実働時間プレビュー */
-  .jittsu-preview {
-    background: rgba(251,146,60,0.08);
-    border: 1px solid rgba(251,146,60,0.25);
-    border-radius: var(--radius);
-    padding: 14px 16px;
-    margin-bottom: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .jittsu-label { font-size: 13px; color: var(--text2); }
-  .jittsu-value {
-    font-size: 24px;
-    font-weight: 700;
-    font-family: 'DM Mono', monospace;
-    color: #fb923c;
-  }
-
-  hr.divider {
-    border: none;
-    border-top: 1px solid var(--border);
-    margin: 22px 0;
-  }
-
-  /* 送信ボタン */
-  .submit-btn {
-    width: 100%;
-    border: none;
-    border-radius: var(--radius);
-    padding: 15px;
-    font-family: 'Noto Sans JP', sans-serif;
-    font-size: 16px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s;
-    color: #fff;
-  }
-  .submit-btn.shift-btn  { background: var(--accent-shift); }
-  .submit-btn.attend-btn { background: var(--accent-attend); }
-  .submit-btn:hover { opacity: 0.88; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
-  .submit-btn:active { transform: translateY(0); }
-  .submit-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
-
-  /* 確認オーバーレイ */
-  .overlay {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.78);
-    display: flex; align-items: center; justify-content: center;
-    z-index: 200;
-    opacity: 0; pointer-events: none;
-    transition: opacity 0.25s;
-    padding: 16px;
-  }
-  .overlay.show { opacity: 1; pointer-events: all; }
-
-  .confirm-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 28px 24px;
-    width: 100%; max-width: 480px;
-    max-height: 85vh; overflow-y: auto;
-  }
-  .confirm-card h2 {
-    font-size: 17px; font-weight: 700;
-    margin-bottom: 18px;
-    display: flex; align-items: center; gap: 8px;
-  }
-  .confirm-row {
-    display: flex; justify-content: space-between;
-    align-items: flex-start;
-    padding: 9px 0;
-    border-bottom: 1px solid var(--border);
-    gap: 12px;
-  }
-  .confirm-row:last-of-type { border-bottom: none; }
-  .confirm-label { font-size: 12px; color: var(--text2); flex-shrink: 0; margin-top: 2px; }
-  .confirm-value { font-size: 14px; font-weight: 500; text-align: right; word-break: break-all; }
-  .confirm-btns {
-    display: grid; grid-template-columns: 1fr 1fr;
-    gap: 10px; margin-top: 20px;
-  }
-  .btn-back {
-    background: var(--surface2); border: 1px solid var(--border);
-    color: var(--text); border-radius: var(--radius);
-    padding: 13px; font-family: 'Noto Sans JP', sans-serif;
-    font-size: 14px; font-weight: 500; cursor: pointer;
-    transition: all 0.2s;
-  }
-  .btn-back:hover { border-color: var(--text2); }
-  .btn-confirm-s {
-    background: var(--accent-shift); border: none;
-    color: #fff; border-radius: var(--radius);
-    padding: 13px; font-family: 'Noto Sans JP', sans-serif;
-    font-size: 14px; font-weight: 700; cursor: pointer;
-    transition: all 0.2s;
-  }
-  .btn-confirm-a {
-    background: var(--accent-attend); border: none;
-    color: #fff; border-radius: var(--radius);
-    padding: 13px; font-family: 'Noto Sans JP', sans-serif;
-    font-size: 14px; font-weight: 700; cursor: pointer;
-    transition: all 0.2s;
-  }
-  .btn-confirm-s:hover, .btn-confirm-a:hover {
-    opacity: 0.88; box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-  }
-
-  /* 成功画面 */
-  .success-screen {
-    display: none; text-align: center; padding: 48px 0;
-  }
-  .success-screen.show { display: block; }
-  .success-icon { font-size: 52px; margin-bottom: 14px; animation: pop 0.5s cubic-bezier(0.34,1.56,0.64,1); }
-  @keyframes pop { from { transform: scale(0); } to { transform: scale(1); } }
-  .success-screen h2 { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
-  .success-screen p  { color: var(--text2); font-size: 14px; margin-bottom: 24px; }
-  .btn-new {
-    display: inline-block;
-    border: none; border-radius: var(--radius);
-    padding: 13px 32px;
-    font-family: 'Noto Sans JP', sans-serif;
-    font-size: 15px; font-weight: 700; cursor: pointer;
-    color: #fff; transition: all 0.2s;
-  }
-  .btn-new.s { background: var(--accent-shift); }
-  .btn-new.a { background: var(--accent-attend); }
-  .btn-new:hover { opacity: 0.88; transform: translateY(-1px); }
-
-  /* Toast */
-  .toast {
-    position: fixed; bottom: 24px; left: 50%;
-    transform: translateX(-50%) translateY(80px);
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 100px;
-    padding: 12px 24px;
-    font-size: 14px; font-weight: 500;
-    display: flex; align-items: center; gap: 8px;
-    transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
-    z-index: 300; white-space: nowrap;
-  }
-  .toast.show { transform: translateX(-50%) translateY(0); }
-  .toast.success { border-color: var(--success); color: var(--success); }
-  .toast.error   { border-color: var(--error);   color: var(--error);   }
+  #toast { position: fixed; left: 16px; right: 16px; bottom: calc(var(--tabbar) + 16px + env(safe-area-inset-bottom)); max-width: 520px; margin: 0 auto; padding: 12px 16px; border-radius: var(--r-lg);
+    background: var(--text); color: var(--bg); display: none; z-index: 30; font-weight: 600; font-size: 14px; box-shadow: 0 8px 30px rgba(0, 0, 0, .22); }
+  #toast.show { display: block; }
+  #toast.ng { background: var(--ng); color: #fff; }
+  body.tab-shift #toast { bottom: calc(var(--tabbar) + 110px + env(safe-area-inset-bottom)); }
+  @media (min-width: 840px) { #toast { bottom: 24px; } body.tab-shift #toast { bottom: 100px; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 </style>
 </head>
-<body>
+<body class="tab-shift">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="10"/></symbol>
+  <symbol id="i-sync" viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 1-15.5 6.3L3 16M3 12a9 9 0 0 1 15.5-6.3L21 8"/><path d="M21 3v5h-5M3 21v-5h5"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></symbol>
+  <symbol id="i-minus" viewBox="0 0 24 24"><path d="M6 12h12"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></symbol>
+</svg>
 
-<div class="header">
-  <div class="header-badge">NEXGATE</div>
-  <h1>シフト・勤怠管理</h1>
-  <p>シフト希望の提出と出退勤の記録ができます</p>
-</div>
+<header>
+  <div class="logo" aria-hidden="true">N</div>
+  <div><h1>シフト・勤怠</h1><span id="who">ネクスゲート</span></div>
+</header>
 
-<!-- タブ -->
-<div class="tabs">
-  <button class="tab active-shift" onclick="switchTab('shift')">📅 シフト希望</button>
-  <button class="tab" id="tab-attend" onclick="switchTab('attend')">⏱ 勤怠記録</button>
-</div>
-
-<!-- ① シフト希望フォーム -->
-<div class="form-card active" id="card-shift">
-  <form id="shiftForm">
-    <div class="section-title shift">基本情報</div>
-
-    <div class="row2">
-      <div class="field">
-        <label>名前 <span class="req">*</span></label>
-        <select name="name" required class="member-select">
-          <option value="">選択</option>
-          <!-- 現役メンバーは GAS マスタから動的注入 -->
-        </select>
-      </div>
-      <div class="field">
-        <label>対象期間 <span class="req">*</span></label>
-        <select name="week" required id="weekSelect" onchange="updateDeadlineNote()">
-          <option value="">選択してください</option>
-        </select>
-        <div id="deadlineNote" style="margin-top:8px;font-size:13px;color:var(--accent2-shift);font-weight:500;"></div>
-        <div style="margin-top:4px;font-size:11px;color:var(--text2);">
-          📌 提出ルール：第1週水曜19:00まで → 当月16日〜末日分／第3週水曜19:00まで → 翌月1日〜15日分
-        </div>
-      </div>
+<main>
+  <div class="card who-card">
+    <div>
+      <label for="nameSel">名前</label>
+      <select id="nameSel"><option value="">読み込み中…</option></select>
     </div>
-
-    <hr class="divider">
-    <div class="section-title shift">希望時間帯（月〜金）※土日祝は休み</div>
-
-    <div id="shiftDaysContainer"></div>
-
-    <hr class="divider">
-
-    <div class="field">
-      <label>備考</label>
-      <input type="text" name="note" placeholder="その他の希望・連絡事項があれば">
-    </div>
-
-    <button type="submit" class="submit-btn shift-btn">内容を確認する →</button>
-  </form>
-  <div class="success-screen" id="shift-success">
-    <div class="success-icon">✅</div>
-    <h2>シフト希望を提出しました！</h2>
-    <p>林さんに通知されました。</p>
-    <button class="btn-new s" onclick="resetShift()">続けて提出する</button>
+    <button id="nameRetry" type="button" class="secondary small hidden">再読み込み</button>
+    <p id="nameErr" class="ferr" hidden></p>
   </div>
-</div>
 
-<!-- ② 勤怠記録フォーム -->
-<div class="form-card" id="card-attend">
-  <form id="attendForm">
-    <div class="section-title attend">基本情報</div>
-
-    <div class="row2">
-      <div class="field attend">
-        <label>名前 <span class="req g">*</span></label>
-        <select name="name" required class="member-select">
-          <option value="">選択</option>
-          <!-- 現役メンバーは GAS マスタから動的注入 -->
-        </select>
-      </div>
-      <div class="field attend">
-        <label>日付 <span class="req g">*</span></label>
-        <input type="date" name="date" required>
-      </div>
-    </div>
-
-    <!-- 実際の打刻 -->
-    <div class="attend-section actual">
-      <div class="attend-section-title">🕐 打刻</div>
-      <div class="row2">
-        <div class="field attend">
-          <label>実際の出勤時刻 <span class="req g">*</span></label>
-          <input type="time" name="actualStart" required id="as" oninput="calcJittsu()">
-        </div>
-        <div class="field attend">
-          <label>実際の退勤時刻 <span class="req g">*</span></label>
-          <input type="time" name="actualEnd" required id="ae" oninput="calcJittsu()">
-        </div>
-      </div>
-      <div class="field attend">
-        <label>実際の休憩時間（時間）</label>
-        <select name="actualBreak" id="ab" onchange="calcJittsu()">
-          <option value="0">なし（0h）</option>
-          <option value="0.5">30分（0.5h）</option>
-          <option value="1" selected>1時間（1.0h）</option>
-          <option value="1.5">1時間30分（1.5h）</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- 実働時間プレビュー -->
-    <div class="jittsu-preview">
-      <span class="jittsu-label">⏱ 実働時間（自動計算）</span>
-      <span class="jittsu-value" id="jittsuVal">—</span>
-    </div>
-
-    <div class="field">
-      <label>備考</label>
-      <input type="text" name="note" placeholder="遅刻・早退の理由など">
-    </div>
-
-    <div style="background:rgba(0,180,160,0.07);border:1px solid rgba(0,180,160,0.25);border-radius:12px;padding:14px 16px;margin-bottom:18px;">
-      <div style="font-size:13px;font-weight:700;color:var(--accent2-attend);margin-bottom:6px;">📎 遅延証明書・病院の領収書など</div>
-      <div style="font-size:13px;color:var(--text2);margin-bottom:10px;">証明書類は別のフォームからアップロードしてください。</div>
-      <a href="https://docs.google.com/forms/d/e/1FAIpQLScCAvJ6oAkZ5fQs2VY2jYFlF-i7k1C3_JjCIGAh74B9PHu3mg/viewform" target="_blank" id="certFormLink"
-        style="display:inline-block;background:var(--accent-attend);color:#fff;font-size:13px;font-weight:700;padding:9px 20px;border-radius:8px;text-decoration:none;">
-        証明書類を提出する →
-      </a>
-    </div>
-
-    <button type="submit" class="submit-btn attend-btn">内容を確認する →</button>
-  </form>
-  <div class="success-screen" id="attend-success">
-    <div class="success-icon">✅</div>
-    <h2>勤怠を記録しました！</h2>
-    <p>スプレッドシートに自動転記されました。</p>
-    <button class="btn-new a" onclick="resetAttend()">続けて記録する</button>
+  <div class="tabwrap">
+    <nav class="tabs" aria-label="画面の切り替え">
+      <a href="#shift" data-tab="shift" aria-current="page"><svg class="i" aria-hidden="true"><use href="#i-cal"/></svg>シフト希望</a>
+      <a href="#attend" data-tab="attend"><svg class="i" aria-hidden="true"><use href="#i-clock"/></svg>勤怠記録</a>
+    </nav>
   </div>
-</div>
 
-<!-- 確認オーバーレイ -->
-<div class="overlay" id="overlay">
-  <div class="confirm-card">
-    <h2 id="confirmTitle">📋 内容の確認</h2>
-    <div id="confirmContent"></div>
-    <div class="confirm-btns">
-      <button class="btn-back" onclick="closeConfirm()">← 修正する</button>
-      <button id="confirmBtn" onclick="doSubmit()">この内容で送信</button>
+  <!-- シフト希望 -->
+  <div data-panel="shift">
+    <div class="card">
+      <h2><svg class="i"><use href="#i-cal"/></svg>シフト希望の提出</h2>
+      <label for="periodSel">対象期間</label>
+      <select id="periodSel"></select>
+      <div class="period-meta"><span id="periodBadge"></span><span id="deadlineNote" class="muted"></span></div>
+      <p class="muted" style="margin:6px 0 0">土日は休みです。祝日は赤で表示しています。</p>
+      <div id="draftNotice" class="notice hidden" role="status"><svg class="i"><use href="#i-sync"/></svg><span>前回の未提出の入力を、この端末から復元しました（まだ提出していません）。</span><button id="draftDiscard" type="button" class="small secondary">破棄</button></div>
+
+      <details class="bulk" id="bulkPanel">
+        <summary><svg class="i" aria-hidden="true"><use href="#i-bolt"/></svg>まとめて入力<svg class="i chev" aria-hidden="true"><use href="#i-chev"/></svg></summary>
+        <div class="bulk-body">
+          <div class="times-row">
+            <div><label for="bulkStart" style="margin-top:0">開始</label><select id="bulkStart"></select></div>
+            <span class="muted" style="margin-top:22px">〜</span>
+            <div><label for="bulkEnd" style="margin-top:0">終了</label><select id="bulkEnd"></select></div>
+          </div>
+          <p id="bulkErr" class="ferr" hidden>終了時刻は開始時刻より後にしてください</p>
+          <fieldset class="seg">
+            <legend>適用する日</legend>
+            <label><input type="radio" name="bulkTarget" value="all" checked>全日</label>
+            <label><input type="radio" name="bulkTarget" value="noHoliday">祝日を除く</label>
+            <label><input type="radio" name="bulkTarget" value="picked">選択した日</label>
+          </fieldset>
+          <label class="check"><input type="checkbox" id="bulkOverwrite">入力済みの日（出勤可・希望休）も上書きする</label>
+          <p id="bulkPreview" class="bulk-preview" aria-live="polite"></p>
+          <button id="bulkApply" type="button" class="secondary block">出勤可として一括適用</button>
+          <p class="muted" style="margin:8px 0 0">一括適用しても提出はされません。日ごとに時刻を直してから、最後に「提出する」を押してください。</p>
+        </div>
+      </details>
+
+      <div class="legend" id="shiftLegend" aria-live="polite"></div>
+      <div id="dayRows" class="days"></div>
+      <label for="shiftNote">備考（任意）</label>
+      <input id="shiftNote" maxlength="500" placeholder="例: 水曜は14時以降なら可">
+    </div>
+    <div class="dock" id="shiftDock">
+      <div class="prog">
+        <div class="count" id="shiftCount">入力済み <b>0</b> / 0日</div>
+        <div class="sub" id="shiftSub" aria-live="polite"></div>
+        <div class="bar" aria-hidden="true"><span id="shiftBar"></span></div>
+      </div>
+      <button id="shiftSubmit" type="button">提出する</button>
     </div>
   </div>
-</div>
 
-<div class="toast" id="toast"></div>
+  <!-- 勤怠記録 -->
+  <div data-panel="attend" class="hidden">
+    <div class="card" id="attendCard">
+      <h2><svg class="i"><use href="#i-clock"/></svg>勤怠の記録</h2>
+      <p class="muted" style="margin:0">その日の実際の出勤・退勤時刻を記録します。</p>
+      <label for="aDate">日付</label>
+      <input id="aDate" type="date">
+      <div class="grid2">
+        <div><label for="aStart">出勤</label><input id="aStart" type="time" step="60"></div>
+        <div><label for="aEnd">退勤</label><input id="aEnd" type="time" step="60"></div>
+      </div>
+      <p id="aTimeErr" class="ferr" hidden>退勤は出勤より後の時刻にしてください</p>
+      <fieldset class="seg" id="aBreak">
+        <legend>休憩</legend>
+        <label><input type="radio" name="aBreak" value="0">なし</label>
+        <label><input type="radio" name="aBreak" value="0.5">30分</label>
+        <label><input type="radio" name="aBreak" value="1" checked>1時間</label>
+        <label><input type="radio" name="aBreak" value="1.5">1時間30分</label>
+      </fieldset>
+      <div class="worked"><span>実働時間</span><b id="aWorked">—</b></div>
+      <label for="aNote">備考（任意）</label>
+      <input id="aNote" maxlength="500" placeholder="例: 電車遅延のため10分遅れ">
+      <p class="hint">遅延証明書・病院の領収書などは、<a href="https://docs.google.com/forms/d/e/1FAIpQLScCAvJ6oAkZ5fQs2VY2jYFlF-i7k1C3_JjCIGAh74B9PHu3mg/viewform" target="_blank" rel="noopener">証明書類の提出フォーム</a>から送ってください。</p>
+      <button id="attendCheck" type="button" class="block" style="margin-top:14px">内容を確認する</button>
+    </div>
+    <div class="card done hidden" id="attendDone">
+      <div class="done-mark"><svg class="i"><use href="#i-check"/></svg></div>
+      <h2>勤怠を記録しました</h2>
+      <p class="muted" id="attendDoneText"></p>
+      <button id="attendAgain" type="button" class="secondary block">続けて記録する</button>
+    </div>
+  </div>
+</main>
+
+<!-- シフト提出の確認 -->
+<dialog id="shiftConfirm" class="sheet" aria-labelledby="scTitle">
+  <div class="sheet-head"><h2 id="scTitle">提出内容の確認</h2><button type="button" class="x" data-close aria-label="閉じる"><svg class="i"><use href="#i-x"/></svg></button></div>
+  <div class="sheet-body">
+    <p id="scWho" style="margin:0;font-weight:800"></p>
+    <div class="legend" id="scCounts"></div>
+    <div class="sum-list" id="scList"></div>
+    <p id="scNote" class="muted" style="margin:0 0 8px"></p>
+    <p class="muted" style="margin:0 0 8px">「未選択」の日は出勤不可として送ります。期限内なら何度でも出し直せます。</p>
+  </div>
+  <div class="sheet-foot"><button type="button" class="secondary" data-close>戻って修正</button><button type="button" id="shiftConfirmOk">この内容で提出する</button></div>
+</dialog>
+
+<!-- 勤怠の確認 -->
+<dialog id="attendConfirm" class="sheet" aria-labelledby="acTitle">
+  <div class="sheet-head"><h2 id="acTitle">記録内容の確認</h2><button type="button" class="x" data-close aria-label="閉じる"><svg class="i"><use href="#i-x"/></svg></button></div>
+  <div class="sheet-body"><div class="sum-list" id="acList"></div></div>
+  <div class="sheet-foot"><button type="button" class="secondary" data-close>戻って修正</button><button type="button" id="attendConfirmOk">この内容で記録する</button></div>
+</dialog>
+
+<div id="toast" role="status" aria-live="polite"></div>
 
 <script>
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbw5sY-MqSkeNjnJA5ETdesDryB7Lo9nFkqNp8ejsiR1L486QMKt0wlRtMcjiKQaelcaQg/exec';
+'use strict';
+// 送信先は今までと同じ GAS。送る形（payload）も旧フォームと同じにしているので、GAS 側の変更は不要
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbw5sY-MqSkeNjnJA5ETdesDryB7Lo9nFkqNp8ejsiR1L486QMKt0wlRtMcjiKQaelcaQg/exec';
 
-  let currentType = 'shift';
-  let pendingData = null;
+var JP_HOLIDAYS = {
+  '2026-01-01': '元日', '2026-01-12': '成人の日', '2026-02-11': '建国記念の日', '2026-02-23': '天皇誕生日', '2026-03-20': '春分の日',
+  '2026-04-29': '昭和の日', '2026-05-03': '憲法記念日', '2026-05-04': 'みどりの日', '2026-05-05': 'こどもの日', '2026-05-06': '振替休日',
+  '2026-07-20': '海の日', '2026-08-11': '山の日', '2026-09-21': '敬老の日', '2026-09-22': '国民の休日', '2026-09-23': '秋分の日',
+  '2026-10-12': 'スポーツの日', '2026-11-03': '文化の日', '2026-11-23': '勤労感謝の日',
+  '2027-01-01': '元日', '2027-01-11': '成人の日', '2027-02-11': '建国記念の日', '2027-02-23': '天皇誕生日', '2027-03-21': '春分の日',
+  '2027-03-22': '振替休日', '2027-04-29': '昭和の日', '2027-05-03': '憲法記念日', '2027-05-04': 'みどりの日', '2027-05-05': 'こどもの日',
+  '2027-07-19': '海の日', '2027-08-11': '山の日', '2027-09-20': '敬老の日', '2027-09-23': '秋分の日', '2027-10-11': 'スポーツの日',
+  '2027-11-03': '文化の日', '2027-11-23': '勤労感謝の日'
+};
+var DOW = '日月火水木金土';
 
-  // ========================================
-  // メンバー一覧をマスタから動的取得してドロップダウンに注入
-  // （シフト管理スプシ「メンバー設定」シート参照・退職者は除外）
-  // ========================================
-  async function loadMembers() {
-    try {
-      const res  = await fetch(GAS_URL + '?action=members');
-      const data = await res.json();
-      const names = (data.members || []).map(m => m.name);
-      if (names.length === 0) {
-        console.warn('メンバー一覧が空です。マスタを確認してください。');
-        return;
-      }
-      document.querySelectorAll('select.member-select').forEach(sel => {
-        // 「選択」プレースホルダ以降を全て削除して再注入
-        const placeholder = sel.querySelector('option[value=""]');
-        sel.innerHTML = '';
-        if (placeholder) sel.appendChild(placeholder);
-        names.forEach(n => {
-          const opt = document.createElement('option');
-          opt.value = n;
-          opt.textContent = n;
-          sel.appendChild(opt);
-        });
-      });
-    } catch (e) {
-      console.error('メンバー取得失敗:', e);
-      // フォールバック: 名前を手入力できるよう input に切り替えるなどは将来対応
-      alert('メンバー一覧の取得に失敗しました。ページを再読み込みするか管理者に連絡してください。');
-    }
+function $(id) { return document.getElementById(id); }
+function el(tag, text, cls) { var e = document.createElement(tag); if (text != null) e.textContent = text; if (cls) e.className = cls; return e; }
+function clear(n) { while (n.firstChild) n.removeChild(n.firstChild); }
+function pad(n) { return ('0' + n).slice(-2); }
+function store(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
+function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function icon(id) { var s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('class', 'i'); var u = document.createElementNS('http://www.w3.org/2000/svg', 'use'); u.setAttribute('href', '#' + id); s.appendChild(u); return s; }
+function mkBadge(text, tone, ic) { var b = el('span', null, 'badge ' + (tone || '')); if (ic) b.appendChild(icon(ic)); b.appendChild(document.createTextNode(text)); return b; }
+var toastTimer;
+function toast(msg, ng) { var t = $('toast'); t.textContent = msg; t.className = 'show' + (ng ? ' ng' : ''); clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.className = ''; }, ng ? 6000 : 3500); }
+
+// ---------- 名前（マスタの「メンバー設定」から取得。最後に選んだ名前をこの端末に覚える） ----------
+var NAME_KEY = 'sf_name';
+function currentName() { return $('nameSel').value; }
+async function loadMembers() {
+  var sel = $('nameSel');
+  $('nameErr').hidden = true; $('nameRetry').classList.add('hidden');
+  try {
+    var res = await fetch(GAS_URL + '?action=members');
+    var data = await res.json();
+    var seen = {}, names = (data.members || []).map(function (m) { return String(m.name || '').trim(); })
+      .filter(function (n) { if (!n || seen[n]) return false; seen[n] = 1; return true; });
+    if (!names.length) throw new Error('empty');
+    clear(sel);
+    var ph = el('option', '選んでください'); ph.value = ''; sel.appendChild(ph);
+    names.forEach(function (n) { var o = el('option', n); o.value = n; sel.appendChild(o); });
+    var saved = load(NAME_KEY);
+    if (saved && names.indexOf(saved) >= 0) sel.value = saved;
+  } catch (e) {
+    clear(sel); var o = el('option', '名前を読み込めませんでした'); o.value = ''; sel.appendChild(o);
+    $('nameErr').textContent = '名前の一覧を読み込めませんでした。通信を確認して「再読み込み」を押してください。続く場合は林さんに連絡してください。';
+    $('nameErr').hidden = false; $('nameRetry').classList.remove('hidden');
   }
+  onNameChanged();
+}
+$('nameSel').addEventListener('change', function () { store(NAME_KEY, currentName() || null); onNameChanged(); });
+$('nameRetry').addEventListener('click', loadMembers);
+function onNameChanged() {
+  $('who').textContent = currentName() ? currentName() + ' さん' : 'ネクスゲート';
+  shiftUI.period = null; renderDayRows();
+}
+function requireName() {
+  if (currentName()) return true;
+  $('nameSel').focus(); $('nameSel').classList.add('invalid');
+  setTimeout(function () { $('nameSel').classList.remove('invalid'); }, 1600);
+  toast('先に名前を選んでください', true); return false;
+}
 
-  // 対象期間の選択肢を自動生成＋提出期限を表示
-  // ルール：
-  //   第1週水曜19:00まで → 当月16日〜末日のシフトを提出
-  //   第3週水曜19:00まで → 翌月1日〜15日のシフトを提出
-  function generatePeriodOptions() {
-    const select = document.getElementById('weekSelect');
-    const now = new Date();
-    const options = [];
+// ---------- タブ ----------
+function showTab(tab) {
+  if (tab !== 'attend') tab = 'shift';
+  document.querySelectorAll('[data-panel]').forEach(function (p) { p.classList.toggle('hidden', p.dataset.panel !== tab); });
+  document.querySelectorAll('nav.tabs a').forEach(function (a) { if (a.dataset.tab === tab) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+  document.body.classList.toggle('tab-shift', tab === 'shift');
+}
+document.querySelectorAll('nav.tabs a').forEach(function (a) {
+  a.addEventListener('click', function (ev) { ev.preventDefault(); history.replaceState(null, '', '#' + a.dataset.tab); showTab(a.dataset.tab); });
+});
+window.addEventListener('hashchange', function () { showTab(location.hash.slice(1)); });
 
-    // 当月・翌月・翌々月の候補を生成
-    for (let i = 0; i <= 2; i++) {
-      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
-      const y = d.getFullYear();
-      const m = d.getMonth() + 1;
-      const mStr = m + '月';
+// ---------- 対象期間と提出期限 ----------
+// 提出ルール：第1週水曜19:00まで → 当月16日〜末日／第3週水曜19:00まで → 翌月1日〜15日
+function nthWednesday(y, m, n) { var first = new Date(y, m - 1, 1).getDay(); return 1 + ((3 - first + 7) % 7) + 7 * (n - 1); }
+function deadlineOf(p) {
+  if (p.half === 'B') return new Date(p.y, p.m - 1, nthWednesday(p.y, p.m, 1), 19, 0);
+  var py = p.m === 1 ? p.y - 1 : p.y, pm = p.m === 1 ? 12 : p.m - 1;
+  return new Date(py, pm - 1, nthWednesday(py, pm, 3), 19, 0);
+}
+function buildPeriods() {
+  var now = new Date(), list = [];
+  for (var i = 0; i <= 2; i++) {
+    var d = new Date(now.getFullYear(), now.getMonth() + i, 1), y = d.getFullYear(), m = d.getMonth() + 1, last = new Date(y, m, 0).getDate();
+    list.push({ y: y, m: m, half: 'A', from: 1, to: 15, value: y + '/' + pad(m) + '/01-15', label: y + '年' + m + '月 前半（1〜15日）' });
+    list.push({ y: y, m: m, half: 'B', from: 16, to: last, value: y + '/' + pad(m) + '/16-' + last, label: y + '年' + m + '月 後半（16日〜' + last + '日）' });
+  }
+  list.forEach(function (p) { p.deadline = deadlineOf(p); p.end = new Date(p.y, p.m - 1, p.to, 23, 59); });
+  return list.filter(function (p) { return p.end >= now; });
+}
+var PERIODS = buildPeriods();
+function periodByValue(v) { return PERIODS.filter(function (p) { return p.value === v; })[0]; }
+function isLate(p) { return Date.now() > p.deadline.getTime(); }
+function fmtDeadline(d) { return (d.getMonth() + 1) + '/' + d.getDate() + '（' + DOW[d.getDay()] + '）19:00'; }
+(function initPeriods() {
+  var sel = $('periodSel');
+  PERIODS.forEach(function (p) { var o = el('option', p.label + (isLate(p) ? '（期限後）' : '')); o.value = p.value; sel.appendChild(o); });
+  var open = PERIODS.filter(function (p) { return !isLate(p); })[0];
+  sel.value = (open || PERIODS[0]).value;
+  sel.addEventListener('change', function () { shiftUI.period = null; renderDayRows(); });
+})();
 
-      // 上旬（1〜15日）
-      options.push({
-        value: `${y}/${String(m).padStart(2,'0')}/01-15`,
-        label: `${y}年${mStr}上旬（1日〜15日）`,
-        year: y, month: m, half: 'first'
-      });
-
-      // 下旬（16日〜末日）
-      const lastDay = new Date(y, m, 0).getDate();
-      options.push({
-        value: `${y}/${String(m).padStart(2,'0')}/16-${lastDay}`,
-        label: `${y}年${mStr}下旬（16日〜${lastDay}日）`,
-        year: y, month: m, half: 'second'
-      });
-    }
-
-    options.forEach(opt => {
-      const el = document.createElement('option');
-      el.value = opt.value;
-      el.textContent = opt.label;
-      select.appendChild(el);
+// ---------- シフトの日ごとの入力 ----------
+function datesOf(p) {
+  var out = [];
+  for (var d = p.from; d <= p.to; d++) {
+    var dt = new Date(p.y, p.m - 1, d), dow = dt.getDay();
+    if (dow === 0 || dow === 6) continue; // 土日は休み
+    out.push({ iso: p.y + '-' + pad(p.m) + '-' + pad(d), label: p.m + '/' + d + '(' + DOW[dow] + ')', text: pad(p.m) + '/' + pad(d) + '（' + DOW[dow] + '）', hol: JP_HOLIDAYS[p.y + '-' + pad(p.m) + '-' + pad(d)] || '' });
+  }
+  return out;
+}
+function timeOptions(sel, val) {
+  clear(sel);
+  for (var t = 9 * 60; t <= 18 * 60; t += 30) { var v = pad(Math.floor(t / 60)) + ':' + pad(t % 60); var o = el('option', v); o.value = v; sel.appendChild(o); }
+  sel.value = val;
+}
+var DEF_START = '13:00', DEF_END = '18:00';
+var shiftUI = { period: null, saved: {}, savedNote: '', submitted: 0, payload: null };
+function keyOf(kind, p) { return 'sf_' + kind + ':' + currentName() + ':' + p; }
+function loadJSON(k) { try { var s = load(k); return s ? JSON.parse(s) : null; } catch (e) { return null; } }
+function dayRowEls() { return Array.prototype.slice.call(document.querySelectorAll('#dayRows .day')); }
+function rowValue(row) {
+  var k = row.dataset.kind;
+  if (k === 'WORK') { var s = row.querySelectorAll('.times select'); return { kind: 'WORK', start: s[0].value, end: s[1].value }; }
+  return k === 'OFF' ? { kind: 'OFF' } : { kind: '' };
+}
+function sameValue(a, b) {
+  a = a || { kind: '' }; b = b || { kind: '' };
+  if ((a.kind || '') !== (b.kind || '')) return false;
+  return a.kind !== 'WORK' || (a.start === b.start && a.end === b.end);
+}
+function isShiftDirty() {
+  if (!shiftUI.period) return false;
+  return dayRowEls().some(function (r) { return !sameValue(rowValue(r), shiftUI.saved[r.dataset.date]); }) || $('shiftNote').value !== shiftUI.savedNote;
+}
+function setKind(row, kind) {
+  row.dataset.kind = kind;
+  row.classList.remove('st-WORK', 'st-OFF', 'st-');
+  row.classList.add('st-' + kind);
+  row.querySelectorAll('.kind button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.k === kind)); });
+  row.querySelector('.state-text').textContent = kind === '' ? '未選択' : '';
+}
+function renderDayRows() {
+  var v = $('periodSel').value, p = periodByValue(v); shiftUI.period = v;
+  var box = $('dayRows'); clear(box);
+  if (!p) return;
+  // この端末で最後に提出した内容を「提出済み」として扱う（変更があるかの判定に使う）
+  var sub = currentName() ? loadJSON(keyOf('sub', v)) : null;
+  shiftUI.saved = sub ? sub.days : {}; shiftUI.savedNote = sub ? (sub.note || '') : ''; shiftUI.submitted = sub ? sub.version : 0;
+  var draft = currentName() ? loadJSON(keyOf('draft', v)) : null;
+  var init = draft ? draft.days : shiftUI.saved;
+  datesOf(p).forEach(function (d) {
+    var row = el('div', null, 'day' + (d.hol ? ' day-mark' : '')); row.dataset.date = d.iso; row.dataset.label = d.label; row.dataset.text = d.text;
+    var pick = el('label', null, 'pick'); var cb = el('input'); cb.type = 'checkbox'; cb.setAttribute('aria-label', d.text + ' を選択'); cb.addEventListener('change', updateBulkPreview); pick.appendChild(cb); row.appendChild(pick);
+    var dcell = el('div', null, 'dcell'); var ds = el('span', d.text, d.hol ? 'd-hol' : ''); if (d.hol) ds.appendChild(el('span', d.hol, 'hol-name')); dcell.appendChild(ds); row.appendChild(dcell);
+    var kw = el('div', null, 'kind-wrap'), grp = el('div', null, 'kind'); grp.setAttribute('role', 'group'); grp.setAttribute('aria-label', d.text + ' の希望');
+    [['WORK', '出勤可'], ['OFF', '希望休']].forEach(function (k) {
+      var b = el('button', k[1]); b.type = 'button'; b.dataset.k = k[0];
+      b.addEventListener('click', function () { setKind(row, row.dataset.kind === k[0] ? '' : k[0]); onShiftChanged(row); }); // もう一度押すと未選択に戻る
+      grp.appendChild(b);
     });
-
-    // 今日に応じて適切な期間を自動選択
-    // 第1週水曜19:00まで → 当月下旬を選択
-    // 第3週水曜19:00まで → 翌月上旬を選択
-    const today = now.getDate();
-    const hour = now.getHours();
-    const dow = now.getDay(); // 0=日, 3=水
-
-    // 第1週水曜の判定（1〜7日の水曜）
-    const isWeek1Wed = (today >= 1 && today <= 7 && dow === 3);
-    // 第3週水曜の判定（15〜21日の水曜）
-    const isWeek3Wed = (today >= 15 && today <= 21 && dow === 3);
-
-    // 期限切れ判定（水曜19:00以降は次の期間へ）
-    const deadlinePassed = hour >= 19;
-
-    let defaultIndex = 1; // デフォルト：当月下旬
-
-    if (today <= 14 || (isWeek1Wed && !deadlinePassed)) {
-      // 当月下旬を提出する期間（第1週水曜19:00まで）
-      defaultIndex = 1; // 当月下旬
-    } else if (today >= 15 || (isWeek3Wed && !deadlinePassed)) {
-      // 翌月上旬を提出する期間（第3週水曜19:00まで）
-      defaultIndex = 2; // 翌月上旬
-    }
-
-    select.selectedIndex = defaultIndex;
-    updateDeadlineNote();
-  }
-
-  // 提出期限の説明を動的表示
-  function updateDeadlineNote() {
-    const select = document.getElementById('weekSelect');
-    const noteEl = document.getElementById('deadlineNote');
-    if (!select || !noteEl) return;
-    const val = select.value;
-    if (!val) { noteEl.textContent = ''; return; }
-
-    const parts = val.split('/');
-    const m = parseInt(parts[1]);
-    const range = parts[2];
-    const isFirst = range.startsWith('01');
-
-    if (isFirst) {
-      // 翌月上旬 → 第3週水曜19:00まで
-      const prevM = m === 1 ? 12 : m - 1;
-      noteEl.innerHTML = `⏰ 提出期限：<strong>${prevM}月 第3週水曜日 19:00まで</strong>`;
-    } else {
-      // 当月下旬 → 第1週水曜19:00まで
-      noteEl.innerHTML = `⏰ 提出期限：<strong>${m}月 第1週水曜日 19:00まで</strong>`;
-    }
-  }
-
-  generatePeriodOptions();
-  loadMembers(); // ← マスタから現役メンバーを動的取得
-
-  // 時間の選択肢を生成（9:00〜18:00、30分刻み）
-  function timeOptions(selectedVal) {
-    const times = [];
-    for (let h = 9; h <= 18; h++) {
-      ['00', '30'].forEach(m => {
-        if (h === 18 && m === '30') return;
-        times.push(`${String(h).padStart(2,'0')}:${m}`);
-      });
-    }
-    return times.map(t =>
-      `<option value="${t}" ${t === selectedVal ? 'selected' : ''}>${t}</option>`
-    ).join('');
-  }
-
-  // 対象期間に応じて月〜金の日付リストを生成
-  function generateDayRows() {
-    const container = document.getElementById('shiftDaysContainer');
-    const weekVal = document.getElementById('weekSelect').value;
-    container.innerHTML = '';
-
-    if (!weekVal) return;
-
-    // 期間をパース（例：2026/04/01-15 or 2026/04/16-30）
-    const parts = weekVal.split('/');
-    const year = parseInt(parts[0]);
-    const month = parseInt(parts[1]) - 1;
-    const rangeParts = parts[2].split('-');
-    const startDay = parseInt(rangeParts[0]);
-    const endDay = parseInt(rangeParts[1]);
-
-    const rows = [];
-    const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
-
-    for (let d = startDay; d <= endDay; d++) {
-      const date = new Date(year, month, d);
-      const dow = date.getDay();
-      if (dow === 0 || dow === 6) continue; // 土日スキップ
-
-      const dateStr = `${month + 1}/${d}(${dayNames[dow]})`;
-      const fieldName = `day_${String(month+1).padStart(2,'0')}${String(d).padStart(2,'0')}`;
-
-      rows.push(`
-        <div class="day-row" style="display:grid;grid-template-columns:100px 1fr 20px 1fr 1fr;align-items:center;gap:8px;margin-bottom:12px;">
-          <div style="font-size:13px;font-weight:700;color:var(--text2);">${dateStr}</div>
-          <div>
-            <select name="${fieldName}_type" onchange="toggleTime('${fieldName}', this.value)"
-              style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;padding:8px 10px;outline:none;-webkit-appearance:none;">
-              <option value="off">出勤不可</option>
-              <option value="on" selected>出勤可能</option>
-            </select>
-          </div>
-          <div id="${fieldName}_sep" style="text-align:center;color:var(--text2);font-size:13px;">〜</div>
-          <div id="${fieldName}_start_wrap">
-            <select name="${fieldName}_start"
-              style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;padding:8px 10px;outline:none;-webkit-appearance:none;">
-              ${timeOptions('09:00')}
-            </select>
-          </div>
-          <div id="${fieldName}_end_wrap">
-            <select name="${fieldName}_end"
-              style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;padding:8px 10px;outline:none;-webkit-appearance:none;">
-              ${timeOptions('18:00')}
-            </select>
-          </div>
-        </div>
-      `);
-    }
-
-    if (rows.length === 0) {
-      container.innerHTML = '<div style="color:var(--text2);font-size:13px;padding:12px 0;">この期間に平日はありません</div>';
-    } else {
-      container.innerHTML = rows.join('');
-    }
-  }
-
-  // 出勤不可のとき時間欄を非表示
-  function toggleTime(fieldName, val) {
-    const startWrap = document.getElementById(fieldName + '_start_wrap');
-    const endWrap   = document.getElementById(fieldName + '_end_wrap');
-    const sep       = document.getElementById(fieldName + '_sep');
-    if (val === 'off') {
-      startWrap.style.opacity = '0.3'; startWrap.style.pointerEvents = 'none';
-      endWrap.style.opacity = '0.3';   endWrap.style.pointerEvents = 'none';
-      sep.style.opacity = '0.3';
-    } else {
-      startWrap.style.opacity = '1'; startWrap.style.pointerEvents = 'auto';
-      endWrap.style.opacity = '1';   endWrap.style.pointerEvents = 'auto';
-      sep.style.opacity = '1';
-    }
-  }
-
-  // 対象期間変更時に日付を再生成
-  document.getElementById('weekSelect').addEventListener('change', generateDayRows);
-  generateDayRows();
-
-  // 今日の日付をデフォルト設定
-  const today = new Date();
-  const yyyy = today.getFullYear();
-  const mm   = String(today.getMonth()+1).padStart(2,'0');
-  const dd   = String(today.getDate()).padStart(2,'0');
-  document.querySelector('#card-attend input[name="date"]').value = `${yyyy}-${mm}-${dd}`;
-
-  // タブ切り替え
-  function switchTab(type) {
-    currentType = type;
-    document.querySelectorAll('.tab').forEach(t => t.className = 'tab');
-    document.querySelectorAll('.form-card').forEach(c => c.classList.remove('active'));
-    if (type === 'shift') {
-      document.querySelectorAll('.tab')[0].className = 'tab active-shift';
-      document.getElementById('card-shift').classList.add('active');
-    } else {
-      document.querySelectorAll('.tab')[1].className = 'tab active-attend';
-      document.getElementById('card-attend').classList.add('active');
-    }
-  }
-
-  // 実働時間計算
-  function calcJittsu() {
-    const as = document.getElementById('as').value;
-    const ae = document.getElementById('ae').value;
-    const ab = parseFloat(document.getElementById('ab').value) || 0;
-    if (!as || !ae) { document.getElementById('jittsuVal').textContent = '—'; return; }
-    const [sh,sm] = as.split(':').map(Number);
-    const [eh,em] = ae.split(':').map(Number);
-    const mins = (eh*60+em) - (sh*60+sm) - ab*60;
-    if (mins <= 0) { document.getElementById('jittsuVal').textContent = '—'; return; }
-    const h = Math.floor(mins/60);
-    const m = mins % 60;
-    document.getElementById('jittsuVal').textContent = m === 0 ? `${h}h` : `${h}h ${m}m`;
-  }
-
-  // シフト希望の送信
-  document.getElementById('shiftForm').addEventListener('submit', e => {
-    e.preventDefault();
-    const fd = new FormData(e.target);
-
-    // 日付ごとのシフト希望を収集
-    const dayRows = document.querySelectorAll('.day-row');
-    const daySchedules = [];
-    const confirmRows = [];
-    dayRows.forEach(row => {
-      const selects = row.querySelectorAll('select');
-      if (selects.length < 3) return;
-      const typeVal  = selects[0].value;
-      const startVal = selects[1].value;
-      const endVal   = selects[2].value;
-      const dateLabel = row.querySelector('div').textContent.trim();
-      if (typeVal === 'off') {
-        daySchedules.push({ date: dateLabel, value: '出勤不可' });
-        confirmRows.push([dateLabel, '出勤不可']);
-      } else {
-        daySchedules.push({ date: dateLabel, value: `${startVal}〜${endVal}` });
-        confirmRows.push([dateLabel, `${startVal}〜${endVal}`]);
-      }
-    });
-
-    pendingData = {
-      type: 'shift',
-      name: fd.get('name'),
-      week: fd.get('week'),
-      days: JSON.stringify(daySchedules),
-      note: fd.get('note') || '',
-    };
-    const rows = [
-      ['名前',     pendingData.name],
-      ['対象期間', pendingData.week],
-      ...confirmRows,
-      ['備考',     pendingData.note || '—'],
-    ];
-    showConfirm('📅 シフト希望の確認', rows, 'btn-confirm-s');
+    kw.appendChild(grp); kw.appendChild(el('span', '', 'state-text')); row.appendChild(kw);
+    var val = init[d.iso] || { kind: '' };
+    var times = el('div', null, 'times'), st = el('select'), en = el('select');
+    timeOptions(st, val.kind === 'WORK' ? val.start : DEF_START); timeOptions(en, val.kind === 'WORK' ? val.end : DEF_END);
+    st.setAttribute('aria-label', d.text + ' の開始'); en.setAttribute('aria-label', d.text + ' の終了');
+    [st, en].forEach(function (s) { s.addEventListener('change', function () { onShiftChanged(row); }); });
+    times.appendChild(st); times.appendChild(el('span', '〜', 'muted')); times.appendChild(en); row.appendChild(times);
+    var err = el('p', '', 'ferr'); err.hidden = true; row.appendChild(err);
+    setKind(row, val.kind || '');
+    box.appendChild(row);
   });
+  $('shiftNote').value = draft ? (draft.note || '') : shiftUI.savedNote;
+  $('draftNotice').classList.toggle('hidden', !draft);
+  var badge = $('periodBadge'); clear(badge);
+  badge.appendChild(isLate(p) ? mkBadge('期限後', 'warn', 'i-alert') : mkBadge('受付中', 'ok', 'i-check'));
+  $('deadlineNote').textContent = '提出期限 ' + fmtDeadline(p.deadline) + (isLate(p) ? '（過ぎています。提出したら林さんにも連絡してください）' : '（期限内なら何度でも出し直せます）');
+  dayRowEls().forEach(markChanged);
+  updateBulkPreview(); updateShiftStatus();
+}
+function markChanged(row) { row.classList.toggle('changed', !sameValue(rowValue(row), shiftUI.saved[row.dataset.date])); }
+function validateRow(row) {
+  var v = rowValue(row), err = row.querySelector('.ferr'), sels = row.querySelectorAll('.times select');
+  var bad = v.kind === 'WORK' && v.start >= v.end;
+  err.textContent = bad ? '終了時刻は開始時刻より後にしてください' : ''; err.hidden = !bad;
+  sels.forEach(function (s) { s.classList.toggle('invalid', bad); });
+  return !bad;
+}
+function onShiftChanged(row) { if (row) { validateRow(row); markChanged(row); } saveDraft(); updateBulkPreview(); updateShiftStatus(); }
+$('shiftNote').addEventListener('input', function () { saveDraft(); updateShiftStatus(); });
+function saveDraft() {
+  if (!shiftUI.period || !currentName()) return;
+  var k = keyOf('draft', shiftUI.period);
+  if (!isShiftDirty()) { store(k, null); return; }
+  var days = {}; dayRowEls().forEach(function (r) { var v = rowValue(r); if (v.kind) days[r.dataset.date] = v; });
+  store(k, JSON.stringify({ days: days, note: $('shiftNote').value, at: Date.now() }));
+}
+$('draftDiscard').addEventListener('click', function () { store(keyOf('draft', shiftUI.period), null); shiftUI.period = null; renderDayRows(); toast('下書きを破棄しました'); });
+function shiftCounts() {
+  var c = { WORK: 0, OFF: 0, none: 0, total: 0 };
+  dayRowEls().forEach(function (r) { c.total++; if (r.dataset.kind) c[r.dataset.kind]++; else c.none++; });
+  return c;
+}
+function updateShiftStatus() {
+  if (!shiftUI.period) return;
+  var c = shiftCounts(), dirty = isShiftDirty(), filled = c.WORK + c.OFF, ver = shiftUI.submitted;
+  var cnt = $('shiftCount'); clear(cnt);
+  cnt.appendChild(document.createTextNode('入力済み ')); cnt.appendChild(el('b', String(filled))); cnt.appendChild(document.createTextNode(' / ' + c.total + '日'));
+  $('shiftBar').style.width = c.total ? Math.round(filled / c.total * 100) + '%' : '0';
+  var sub = $('shiftSub'); sub.className = 'sub' + (dirty ? ' dirty' : '');
+  sub.textContent = !currentName() ? '先に名前を選んでください' : dirty ? '● 未提出の変更があります' : ver ? 'この端末から提出済み（変更なし）' : 'まだ提出していません';
+  var lg = $('shiftLegend'); clear(lg);
+  lg.appendChild(mkBadge('出勤可 ' + c.WORK, 'ok', 'i-check'));
+  lg.appendChild(mkBadge('希望休 ' + c.OFF, '', 'i-minus'));
+  lg.appendChild(mkBadge('未選択 ' + c.none, c.none ? 'warn' : '', 'i-alert'));
+  var btn = $('shiftSubmit');
+  if (btn.getAttribute('aria-busy') !== 'true') {
+    btn.disabled = !!ver && !dirty;
+    btn.textContent = ver && !dirty ? '提出済み' : ver ? '再提出する' : '提出する';
+  }
+}
 
-  // 勤怠記録の送信
-  document.getElementById('attendForm').addEventListener('submit', e => {
-    e.preventDefault();
-    const fd = new FormData(e.target);
-    const jittsu = document.getElementById('jittsuVal').textContent;
-    pendingData = {
-      type:        'attendance',
-      name:        fd.get('name'),
-      date:        fd.get('date'),
-      actualStart: fd.get('actualStart'),
-      actualEnd:   fd.get('actualEnd'),
-      actualBreak: fd.get('actualBreak'),
-      note:        fd.get('note') || '',
-    };
-    const rows = [
-      ['名前',     pendingData.name],
-      ['日付',     pendingData.date],
-      ['出勤',     pendingData.actualStart],
-      ['退勤',     pendingData.actualEnd],
-      ['休憩',     pendingData.actualBreak + 'h'],
-      ['実働時間',  jittsu],
-      ['備考',     pendingData.note || '—'],
-    ];
-    showConfirm('⏱ 勤怠記録の確認', rows, 'btn-confirm-a');
+// まとめて入力：対象の日を明示し、既定では入力済みの日は上書きしない
+function bulkTargetRows() {
+  var t = (document.querySelector('input[name=bulkTarget]:checked') || {}).value;
+  return dayRowEls().filter(function (r) {
+    if (t === 'noHoliday') return !JP_HOLIDAYS[r.dataset.date];
+    if (t === 'picked') return r.querySelector('.pick input').checked;
+    return true;
   });
-
-  function showConfirm(title, rows, btnClass) {
-    document.getElementById('confirmTitle').textContent = title;
-    document.getElementById('confirmContent').innerHTML = rows.map(([l,v]) =>
-      v === '' ? `<div style="padding:6px 0;font-size:11px;color:var(--text2);letter-spacing:1px;font-family:'DM Mono',monospace">${l}</div>` :
-      `<div class="confirm-row">
-        <span class="confirm-label">${l}</span>
-        <span class="confirm-value">${v}</span>
-      </div>`
-    ).join('');
-    const btn = document.getElementById('confirmBtn');
-    btn.className = btnClass;
-    btn.textContent = 'この内容で送信';
-    document.getElementById('overlay').classList.add('show');
+}
+function updateBulkPreview() {
+  var t = (document.querySelector('input[name=bulkTarget]:checked') || {}).value;
+  $('dayRows').classList.toggle('picking', t === 'picked');
+  var rows = bulkTargetRows(), over = $('bulkOverwrite').checked;
+  var empty = rows.filter(function (r) { return !r.dataset.kind; }), filled = rows.length - empty.length, apply = over ? rows.length : empty.length;
+  var s = $('bulkStart').value, e = $('bulkEnd').value, bad = s >= e;
+  $('bulkErr').hidden = !bad; $('bulkEnd').classList.toggle('invalid', bad);
+  var p = $('bulkPreview'); clear(p);
+  if (t === 'picked' && !rows.length) p.appendChild(document.createTextNode('下の一覧で、適用する日にチェックを入れてください。'));
+  else {
+    p.appendChild(document.createTextNode('対象 ' + rows.length + '日のうち ')); p.appendChild(el('b', apply + '日'));
+    p.appendChild(document.createTextNode(' を「出勤可 ' + s + '〜' + e + '」にします。'));
+    if (filled) p.appendChild(document.createTextNode(over ? '入力済みの ' + filled + '日も上書きします。' : '入力済みの ' + filled + '日はそのままです。'));
   }
+  $('bulkApply').disabled = bad || !apply;
+}
+document.querySelectorAll('input[name=bulkTarget]').forEach(function (r) { r.addEventListener('change', updateBulkPreview); });
+$('bulkOverwrite').addEventListener('change', updateBulkPreview);
+['bulkStart', 'bulkEnd'].forEach(function (id) { $(id).addEventListener('change', updateBulkPreview); });
+timeOptions($('bulkStart'), DEF_START); timeOptions($('bulkEnd'), DEF_END);
+$('bulkApply').addEventListener('click', function () {
+  var over = $('bulkOverwrite').checked, s = $('bulkStart').value, e = $('bulkEnd').value;
+  var rows = bulkTargetRows().filter(function (r) { return over || !r.dataset.kind; });
+  rows.forEach(function (r) {
+    setKind(r, 'WORK');
+    var sels = r.querySelectorAll('.times select'); sels[0].value = s; sels[1].value = e;
+    validateRow(r); markChanged(r);
+    r.classList.add('flash'); setTimeout(function () { r.classList.remove('flash'); }, 900);
+  });
+  document.querySelectorAll('#dayRows .pick input').forEach(function (c) { c.checked = false; });
+  onShiftChanged(null);
+  toast(rows.length + '日に ' + s + '〜' + e + ' を入れました（まだ提出していません）');
+});
 
-  function closeConfirm() {
-    document.getElementById('overlay').classList.remove('show');
-  }
+// ---------- 確認シート ----------
+function openSheet(d) { d.showModal(); }
+document.querySelectorAll('dialog [data-close]').forEach(function (b) { b.addEventListener('click', function () { b.closest('dialog').close(); }); });
+function sumRow(list, l, v, muted) { var line = el('div'); line.appendChild(el('span', l)); line.appendChild(el('span', v, muted ? 'none' : '')); list.appendChild(line); }
 
-  async function doSubmit() {
-    const btn = document.getElementById('confirmBtn');
-    btn.disabled = true;
-    btn.textContent = '送信中...';
-    closeConfirm();
+$('shiftSubmit').addEventListener('click', function () {
+  if (!requireName()) return;
+  var p = periodByValue(shiftUI.period); if (!p) return;
+  var bad = dayRowEls().filter(function (r) { return !validateRow(r); });
+  if (bad.length) { bad[0].scrollIntoView({ block: 'center' }); toast(bad[0].dataset.text + ' の終了時刻が開始時刻より前です', true); return; }
+  var days = [], saved = {}, list = $('scList'); clear(list);
+  dayRowEls().forEach(function (r) {
+    var v = rowValue(r);
+    // 旧フォームと同じ形：{ date: '11/17(火)', value: '13:00〜18:00' | '出勤不可' }。未選択は出勤不可として送る
+    var value = v.kind === 'WORK' ? v.start + '〜' + v.end : '出勤不可';
+    days.push({ date: r.dataset.label, value: value });
+    if (v.kind) saved[r.dataset.date] = v;
+    sumRow(list, r.dataset.text, v.kind === 'WORK' ? '出勤可 ' + value : v.kind === 'OFF' ? '希望休' : '未選択（出勤不可）', v.kind !== 'WORK');
+  });
+  var c = shiftCounts();
+  $('scWho').textContent = currentName() + ' さん・' + p.label;
+  var cc = $('scCounts'); clear(cc);
+  cc.appendChild(mkBadge('出勤可 ' + c.WORK + '日', 'ok', 'i-check')); cc.appendChild(mkBadge('希望休 ' + c.OFF + '日', '', 'i-minus')); cc.appendChild(mkBadge('未選択 ' + c.none + '日', c.none ? 'warn' : '', 'i-alert'));
+  $('scNote').textContent = $('shiftNote').value ? '備考: ' + $('shiftNote').value : '';
+  shiftUI.payload = { type: 'shift', name: currentName(), week: p.value, days: JSON.stringify(days), note: $('shiftNote').value || '' };
+  shiftUI.savedDays = saved;
+  openSheet($('shiftConfirm'));
+});
+async function postToGAS(data) {
+  // GAS は CORS の応答を返さないため no-cors で送る（旧フォームと同じ方式）。届いたかどうかは画面では確認できない
+  await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+}
+async function guarded(btn, fn) {
+  if (btn.getAttribute('aria-busy') === 'true') return;
+  btn.setAttribute('aria-busy', 'true'); btn.disabled = true;
+  try { await fn(); } catch (e) { toast('送信できませんでした。通信を確認して、もう一度送ってください', true); }
+  finally { btn.removeAttribute('aria-busy'); btn.disabled = false; }
+}
+$('shiftConfirmOk').addEventListener('click', function (ev) {
+  var p = shiftUI.payload; if (!p) return;
+  guarded(ev.currentTarget, async function () {
+    await postToGAS(p);
+    var ver = (shiftUI.submitted || 0) + 1;
+    store(keyOf('sub', p.week), JSON.stringify({ days: shiftUI.savedDays, note: p.note, version: ver, at: Date.now() }));
+    store(keyOf('draft', p.week), null);
+    $('shiftConfirm').close(); shiftUI.payload = null; shiftUI.period = null; renderDayRows();
+    toast('シフト希望を提出しました。林さんに通知されます');
+  });
+});
 
-    try {
-      await fetch(GAS_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(pendingData),
-      });
+// ---------- 勤怠 ----------
+function todayISO() { var d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+function breakVal() { return (document.querySelector('input[name=aBreak]:checked') || {}).value || '0'; }
+function workedMinutes() {
+  var s = $('aStart').value, e = $('aEnd').value; if (!s || !e) return null;
+  var a = s.split(':').map(Number), b = e.split(':').map(Number);
+  return (b[0] * 60 + b[1]) - (a[0] * 60 + a[1]) - parseFloat(breakVal()) * 60;
+}
+function fmtMin(m) { var h = Math.floor(m / 60), r = m % 60; return r ? h + '時間' + r + '分' : h + '時間'; }
+function updateWorked() {
+  var s = $('aStart').value, e = $('aEnd').value, bad = !!(s && e && e <= s);
+  $('aTimeErr').hidden = !bad; $('aEnd').classList.toggle('invalid', bad);
+  var m = workedMinutes(); $('aWorked').textContent = m != null && m > 0 ? fmtMin(m) : '—';
+}
+['aStart', 'aEnd'].forEach(function (id) { $(id).addEventListener('input', updateWorked); });
+document.querySelectorAll('input[name=aBreak]').forEach(function (r) { r.addEventListener('change', updateWorked); });
+$('aDate').value = todayISO();
+var attendPayload = null;
+$('attendCheck').addEventListener('click', function () {
+  if (!requireName()) return;
+  var d = $('aDate').value, s = $('aStart').value, e = $('aEnd').value, m = workedMinutes();
+  if (!d) { $('aDate').focus(); toast('日付を入れてください', true); return; }
+  if (!s || !e) { (s ? $('aEnd') : $('aStart')).focus(); toast('出勤と退勤の時刻を入れてください', true); return; }
+  if (e <= s) { $('aEnd').focus(); toast('退勤は出勤より後の時刻にしてください', true); return; }
+  if (!(m > 0)) { toast('休憩が勤務時間より長くなっています', true); return; }
+  var b = breakVal(), dt = new Date(d + 'T00:00:00');
+  // 旧フォームと同じ形（actualBreak は時間単位の文字列 '0' / '0.5' / '1' / '1.5'）
+  attendPayload = { type: 'attendance', name: currentName(), date: d, actualStart: s, actualEnd: e, actualBreak: b, note: $('aNote').value || '' };
+  var list = $('acList'); clear(list);
+  sumRow(list, '名前', currentName());
+  sumRow(list, '日付', (dt.getMonth() + 1) + '/' + dt.getDate() + '（' + DOW[dt.getDay()] + '）');
+  sumRow(list, '出勤〜退勤', s + '〜' + e);
+  sumRow(list, '休憩', b === '0' ? 'なし' : fmtMin(parseFloat(b) * 60));
+  sumRow(list, '実働', fmtMin(m));
+  sumRow(list, '備考', attendPayload.note || 'なし', !attendPayload.note);
+  openSheet($('attendConfirm'));
+});
+$('attendConfirmOk').addEventListener('click', function (ev) {
+  var p = attendPayload; if (!p) return;
+  guarded(ev.currentTarget, async function () {
+    await postToGAS(p);
+    $('attendConfirm').close(); attendPayload = null;
+    var dt = new Date(p.date + 'T00:00:00');
+    $('attendDoneText').textContent = (dt.getMonth() + 1) + '/' + dt.getDate() + '（' + DOW[dt.getDay()] + '）' + p.actualStart + '〜' + p.actualEnd + ' を送りました。';
+    $('attendCard').classList.add('hidden'); $('attendDone').classList.remove('hidden');
+    toast('勤怠を記録しました');
+  });
+});
+$('attendAgain').addEventListener('click', function () {
+  $('aStart').value = ''; $('aEnd').value = ''; $('aNote').value = ''; $('aDate').value = todayISO();
+  document.querySelector('input[name=aBreak][value="1"]').checked = true; updateWorked();
+  $('attendDone').classList.add('hidden'); $('attendCard').classList.remove('hidden');
+});
 
-      if (pendingData.type === 'shift') {
-        document.getElementById('shiftForm').style.display = 'none';
-        document.getElementById('shift-success').classList.add('show');
-        showToast('✅ シフト希望を送信しました！', 'success');
-      } else {
-        document.getElementById('attendForm').style.display = 'none';
-        document.getElementById('attend-success').classList.add('show');
-        showToast('✅ 勤怠を記録しました！', 'success');
-      }
-    } catch (err) {
-      showToast('⚠️ 送信に失敗しました', 'error');
-    }
-    btn.disabled = false;
-  }
-
-  function resetShift() {
-    document.getElementById('shiftForm').reset();
-    document.getElementById('shiftForm').style.display = 'block';
-    document.getElementById('shift-success').classList.remove('show');
-  }
-
-  function resetAttend() {
-    document.getElementById('attendForm').reset();
-    document.getElementById('attendForm').style.display = 'block';
-    document.getElementById('attend-success').classList.remove('show');
-    document.querySelector('#card-attend input[name="date"]').value = `${yyyy}-${mm}-${dd}`;
-    document.getElementById('jittsuVal').textContent = '—';
-  }
-
-  function showToast(msg, type) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.className = `toast ${type} show`;
-    setTimeout(() => t.classList.remove('show'), 3500);
-  }
+// ---------- 起動 ----------
+showTab(location.hash.slice(1));
+renderDayRows();
+loadMembers();
 </script>
 </body>
 </html>
