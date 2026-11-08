@@ -307,7 +307,7 @@
 
   .kind button, .today button.secondary, .num-step button { box-shadow: none !important; }
 
-  /* 営業実績（手入力）。Zoom の自動集計とは別のカード・別の表示名（「申告」）で出す */
+  /* 営業実績（手入力）。別のカード・別の表示名（「申告」）で出す */
   .rep-today { display: flex; flex-direction: column; gap: 8px; margin: 12px 0 4px; }
   .rep-item { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center; padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--r-lg); background: var(--surface); }
   .rep-item .rp-name { font-weight: 800; color: var(--navy); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -501,7 +501,7 @@
           <li class="step" id="stepOut">⑥ 退勤<small id="stepOutT">未</small></li>
         </ol>
         <div class="grid2" id="todayActions"></div>
-        <div class="note">出勤 → 案件 → 空き回線 → 架電開始 の順に進みます。架電を終了してから退勤します。押した時間の通話だけが実績になります。</div>
+        <div class="note">出勤 → 案件 → 空き回線 → 架電開始 の順に進みます。架電を終了してから退勤します。開始〜終了の時間が架電時間として記録されます。</div>
       </div>
       <div id="opStatus" class="opstatus hidden" role="status" aria-live="polite"><span class="spin" aria-hidden="true"></span><span id="opStatusMsg"></span><button type="button" class="tclose" id="opStatusClose" aria-label="表示を閉じる"><svg class="i"><use href="#i-x"/></svg></button></div>
       <div class="card flow" id="flowCard">
@@ -626,7 +626,7 @@
     <div data-panel="stats" class="panel hidden">
       <div class="card" id="reportCard">
         <div class="card-head"><h2><svg class="i"><use href="#i-edit"/></svg>今日の営業実績</h2><span class="src-tag">申告（手入力）</span></div>
-        <p class="muted" style="margin:2px 0 0">直コン数・受コン数・直AP数・受AP数を案件ごとに入力します（コンタクト数・AP数は合計を自動で計算）。コール数は Zoom の通話件数を使うので入力は不要です。</p>
+        <p class="muted" style="margin:2px 0 0">直コン数・受コン数・直AP数・受AP数を案件ごとに入力します（コンタクト数・AP数は合計を自動で計算）。コール数（架電数）は「テレアポ数値管理（アルバイト）」に入力してください（この画面では入力しません）。</p>
         <div id="repToday" class="rep-today"></div>
         <button id="reportOpen" type="button" class="block">営業実績を入力</button>
         <div id="repMonth" class="rep-sum"></div>
@@ -637,12 +637,11 @@
       </div>
       <div class="card">
         <div class="card-head"><h2><svg class="i"><use href="#i-chart"/></svg>今月の実績</h2><span class="muted" id="statsMonth"></span></div>
-        <p class="muted" style="margin:2px 0 0"><span class="src-tag zoom">Zoom・勤怠</span> 架電数・接続数は回線と時刻で本人に確定した通話だけ（自動）。</p>
+        <p class="muted" style="margin:2px 0 0">架電数は「テレアポ数値管理（アルバイト）」に入力してください（この画面では数えません）。</p>
         <div class="kpi-grid">
           <div class="kpi"><div class="l"><svg class="i" aria-hidden="true"><use href="#i-cal"/></svg>出勤日数</div><div class="v"><span id="kDays">0</span><small>日</small></div><div class="s" id="kDaysSub"></div></div>
           <div class="kpi"><div class="l"><svg class="i" aria-hidden="true"><use href="#i-clock"/></svg>実働時間</div><div class="v"><span id="kHours">0</span><small>時間</small></div><div class="s">承認前の修正申請は含みません</div></div>
-          <div class="kpi"><div class="l"><svg class="i" aria-hidden="true"><use href="#i-phone"/></svg>架電数</div><div class="v"><span id="kCalls">0</span><small>件</small></div><div class="s" id="kCallsSub"></div></div>
-          <div class="kpi"><div class="l"><svg class="i" aria-hidden="true"><use href="#i-link"/></svg>接続数</div><div class="v"><span id="kConn">0</span><small>件</small></div><div class="s" id="kConnSub"></div></div>
+          <div class="kpi"><div class="l"><svg class="i" aria-hidden="true"><use href="#i-phone"/></svg>架電時間</div><div class="v"><span id="kCallHours">0</span><small>時間</small></div><div class="s">架電の開始〜終了の合計</div></div>
         </div>
         <p id="workMonth" class="muted" style="margin:8px 0 0"></p>
       </div>
@@ -651,10 +650,9 @@
         <div id="myStats"></div>
         <div class="kpi na" style="margin-top:12px">
           <div class="l">AP数</div>
-          <div class="v">Zoom では数えません</div>
+          <div class="v">本人の申告で記録</div>
           <div class="s">AP数は本人の申告（上の「今日の営業実績」）だけで記録します。Twenty の商談件数とは、定義がそろうまで合算しません。</div>
         </div>
-        <p class="muted" style="margin:10px 0 0">架電・接続は、回線と時刻で本人に確定できた通話だけを数えています（照合待ちの通話は含みません）。</p>
       </div>
       <div class="card">
         <h2><svg class="i"><use href="#i-lock"/></svg>パスワード</h2>
@@ -695,7 +693,7 @@
       <div class="num-grid" id="repFields"></div>
       <label for="repNote">備考（任意）</label>
       <input id="repNote" maxlength="500" placeholder="例: 午後は日本プラミングに切替">
-      <p class="muted" style="margin:10px 0 12px">数字は申告として保存されます（Zoom の通話件数とは別）。保存後も同じ画面から修正でき、修正前の値は履歴に残ります。</p>
+      <p class="muted" style="margin:10px 0 12px">数字は申告として保存されます。保存後も同じ画面から修正でき、修正前の値は履歴に残ります。</p>
     </div>
     <div data-rstep="2" hidden>
       <p style="margin:0 0 8px;font-weight:800;color:var(--navy)">この内容で保存します</p>
@@ -1788,21 +1786,20 @@ $('certSubmit').addEventListener('click', function (ev) {
 function renderStats(h) {
   var wm = h.work_month || {}, rows = h.stats_month || [];
   var sum = function (k) { return rows.reduce(function (s, r) { return s + (Number(r[k]) || 0); }, 0); };
-  var calls = sum('calls'), conn = sum('connected'), hrs = sum('session_hours');
+  var hrs = sum('session_hours');
   $('statsMonth').textContent = +h.today.slice(5, 7) + '月1日〜' + +h.today.slice(8, 10) + '日';
   $('kDays').textContent = wm.worked_days || 0; $('kDaysSub').textContent = '確定シフト ' + (wm.confirmed_days || 0) + '日';
   $('kHours').textContent = wm.hours || 0;
-  $('kCalls').textContent = calls; $('kCallsSub').textContent = '架電時間 ' + fmtH(hrs) + '時間';
-  $('kConn').textContent = conn; $('kConnSub').textContent = calls ? '接続率 ' + Math.round(conn / calls * 100) + '%' : '接続率 —';
+  $('kCallHours').textContent = fmtH(hrs);
   $('workMonth').textContent = '出勤 ' + (wm.worked_days || 0) + ' 日・実働 ' + (wm.hours || 0) + ' 時間（確定シフト ' + (wm.confirmed_days || 0) + ' 日）';
   var box = $('myStats'); clear(box);
   rows.forEach(function (r) {
     var p = el('div', null, 'proj'); p.appendChild(el('div', r.project_name || '（案件不明）', 'pn'));
     var v = function (val, lbl) { var c = el('div', null, 'pv'); c.appendChild(el('small', lbl)); c.appendChild(document.createTextNode(val)); p.appendChild(c); };
-    v(r.calls, '架電'); v(r.connected, '接続'); v(r.calls ? Math.round(r.connected / r.calls * 100) + '%' : '—', '接続率'); v(fmtH(r.session_hours) + 'h', '架電時間');
+    v(fmtH(r.session_hours) + 'h', '架電時間');
     box.appendChild(p);
   });
-  if (!rows.length) box.appendChild(el('div', '今月の確定した架電実績はまだありません', 'empty'));
+  if (!rows.length) box.appendChild(el('div', '今月の架電の記録はまだありません', 'empty'));
 }
 
 // ---------- 営業実績（手入力）: 本人 × 日付 × 案件。入力 → 確認 → 保存完了。修正は同じ画面で版が上がる ----------
