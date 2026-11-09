@@ -170,6 +170,20 @@
   .done-mark svg.i { width: 28px; height: 28px; stroke-width: 2.6; }
   .done { text-align: center; }
   .done h2 { justify-content: center; }
+  /* 打刻 */
+  .punch-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; }
+  .punch-date { font-size: 13px; color: var(--text2); font-weight: 600; }
+  .punch-state { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 10px 0 4px; padding: 14px; border-radius: var(--r-md); background: var(--surface2); }
+  .punch-state .st { font-size: 20px; font-weight: 800; color: var(--navy); font-variant-numeric: tabular-nums; }
+  .punch-state .st.ok { color: var(--ok); } .punch-state .st.work { color: var(--accent); }
+  .punch-state .sub { font-size: 13px; color: var(--text2); width: 100%; }
+  .punch-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+  .punch-btns button { min-height: 56px; font-size: 16px; }
+  button.out { background: var(--navy); border-color: var(--navy); color: var(--surface); }
+  .result { display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border-radius: var(--r-md); font-size: 13px; font-weight: 600; margin: 12px 0 0; background: var(--ok-soft); color: var(--ok); }
+  .result.ng { background: var(--ng-soft); color: var(--ng); }
+  .result svg.i { width: 18px; height: 18px; margin-top: 1px; }
+  .result[hidden] { display: none; }
 
   /* 確認シート */
   dialog.sheet { border: 0; padding: 0; background: var(--surface); color: var(--text); border-radius: calc(var(--radius) + 2px); width: min(520px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); box-shadow: var(--shadow-lg); }
@@ -283,35 +297,56 @@
 
   <!-- 勤怠記録 -->
   <div data-panel="attend" class="hidden">
-    <div class="card" id="attendCard">
-      <h2><svg class="i"><use href="#i-clock"/></svg>勤怠の記録</h2>
-      <p class="muted" style="margin:0">その日の実際の出勤・退勤時刻を記録します。</p>
-      <label for="aDate">日付</label>
-      <input id="aDate" type="date">
-      <div class="grid2">
-        <div><label for="aStart">出勤</label><input id="aStart" type="time" step="60"></div>
-        <div><label for="aEnd">退勤</label><input id="aEnd" type="time" step="60"></div>
-      </div>
-      <p id="aTimeErr" class="ferr" hidden>退勤は出勤より後の時刻にしてください</p>
-      <fieldset class="seg" id="aBreak">
-        <legend>休憩</legend>
-        <label><input type="radio" name="aBreak" value="0">なし</label>
-        <label><input type="radio" name="aBreak" value="0.5">30分</label>
-        <label><input type="radio" name="aBreak" value="1" checked>1時間</label>
-        <label><input type="radio" name="aBreak" value="1.5">1時間30分</label>
+    <div class="card" id="punchCard">
+      <h2><svg class="i"><use href="#i-clock"/></svg>今日の打刻</h2>
+      <p class="muted" style="margin:0">出勤したときに「出勤する」、帰るときに休憩を選んで「退勤する」を押します。押した時刻で記録されます。</p>
+      <div class="punch-head"><span class="punch-date" id="pDate"></span><button id="pReload" type="button" class="secondary small"><svg class="i" aria-hidden="true"><use href="#i-sync"/></svg>状態を読み直す</button></div>
+      <div class="punch-state" aria-live="polite"><span class="st" id="pState">—</span><span class="sub" id="pSub"></span></div>
+      <fieldset class="seg" id="pBreak">
+        <legend>休憩（退勤のときに選ぶ）</legend>
+        <label><input type="radio" name="pBreak" value="0">なし</label>
+        <label><input type="radio" name="pBreak" value="0.5">30分</label>
+        <label><input type="radio" name="pBreak" value="1">1時間</label>
+        <label><input type="radio" name="pBreak" value="1.5">1時間30分</label>
       </fieldset>
-      <div class="worked"><span>実働時間</span><b id="aWorked">—</b></div>
-      <label for="aNote">備考（任意）</label>
-      <input id="aNote" maxlength="500" placeholder="例: 電車遅延のため10分遅れ">
-      <p class="hint">遅延証明書・病院の領収書などは、<a href="https://docs.google.com/forms/d/e/1FAIpQLScCAvJ6oAkZ5fQs2VY2jYFlF-i7k1C3_JjCIGAh74B9PHu3mg/viewform" target="_blank" rel="noopener">証明書類の提出フォーム</a>から送ってください。</p>
-      <button id="attendCheck" type="button" class="block" style="margin-top:14px">内容を確認する</button>
+      <div class="punch-btns">
+        <button id="pIn" type="button" disabled>出勤する</button>
+        <button id="pOut" type="button" class="out" disabled>退勤する</button>
+      </div>
+      <p id="pResult" class="result" role="status" hidden><svg class="i"><use href="#i-check"/></svg><span></span></p>
     </div>
-    <div class="card done hidden" id="attendDone">
-      <div class="done-mark"><svg class="i"><use href="#i-check"/></svg></div>
-      <h2>勤怠を記録しました</h2>
-      <p class="muted" id="attendDoneText"></p>
-      <button id="attendAgain" type="button" class="secondary block">続けて記録する</button>
-    </div>
+
+    <details class="bulk card" id="manualPanel" style="padding:0">
+      <summary><svg class="i" aria-hidden="true"><use href="#i-cal"/></svg>打刻を忘れた日・過去の日を入力する<svg class="i chev" aria-hidden="true"><use href="#i-chev"/></svg></summary>
+      <div class="bulk-body" id="attendCard">
+        <p class="muted" style="margin:0">出勤・退勤をまとめて入れます。同じ日の記録がすでにあるときは、その記録を直します（備考に「修正」と入ります）。</p>
+        <label for="aDate">日付</label>
+        <input id="aDate" type="date">
+        <div class="grid2">
+          <div><label for="aStart">出勤</label><input id="aStart" type="time" step="60"></div>
+          <div><label for="aEnd">退勤</label><input id="aEnd" type="time" step="60"></div>
+        </div>
+        <p id="aTimeErr" class="ferr" hidden>退勤は出勤より後の時刻にしてください</p>
+        <fieldset class="seg" id="aBreak">
+          <legend>休憩</legend>
+          <label><input type="radio" name="aBreak" value="0">なし</label>
+          <label><input type="radio" name="aBreak" value="0.5">30分</label>
+          <label><input type="radio" name="aBreak" value="1" checked>1時間</label>
+          <label><input type="radio" name="aBreak" value="1.5">1時間30分</label>
+        </fieldset>
+        <div class="worked"><span>実働時間</span><b id="aWorked">—</b></div>
+        <label for="aNote">備考（任意）</label>
+        <input id="aNote" maxlength="500" placeholder="例: 電車遅延のため10分遅れ">
+        <p class="hint">遅延証明書・病院の領収書などは、<a href="https://docs.google.com/forms/d/e/1FAIpQLScCAvJ6oAkZ5fQs2VY2jYFlF-i7k1C3_JjCIGAh74B9PHu3mg/viewform" target="_blank" rel="noopener">証明書類の提出フォーム</a>から送ってください。</p>
+        <button id="attendCheck" type="button" class="block" style="margin-top:14px">内容を確認する</button>
+      </div>
+      <div class="bulk-body done hidden" id="attendDone">
+        <div class="done-mark"><svg class="i"><use href="#i-check"/></svg></div>
+        <h2>勤怠を記録しました</h2>
+        <p class="muted" id="attendDoneText"></p>
+        <button id="attendAgain" type="button" class="secondary block">続けて記録する</button>
+      </div>
+    </details>
   </div>
 </main>
 
@@ -339,7 +374,7 @@
 
 <script>
 'use strict';
-// 送信先は今までと同じ GAS。送る形（payload）も旧フォームと同じにしているので、GAS 側の変更は不要
+// 送信先は今までと同じ GAS。シフトは旧フォームと同じ送り方（no-cors）。勤怠は結果を受け取る送り方（postJSON・2026-11-09〜）
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbw5sY-MqSkeNjnJA5ETdesDryB7Lo9nFkqNp8ejsiR1L486QMKt0wlRtMcjiKQaelcaQg/exec';
 
 var JP_HOLIDAYS = {
@@ -394,6 +429,7 @@ $('nameRetry').addEventListener('click', loadMembers);
 function onNameChanged() {
   $('who').textContent = currentName() ? currentName() + ' さん' : 'ネクスゲート';
   shiftUI.period = null; renderDayRows();
+  loadPunch();
 }
 function requireName() {
   if (currentName()) return true;
@@ -408,6 +444,7 @@ function showTab(tab) {
   document.querySelectorAll('[data-panel]').forEach(function (p) { p.classList.toggle('hidden', p.dataset.panel !== tab); });
   document.querySelectorAll('nav.tabs a').forEach(function (a) { if (a.dataset.tab === tab) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   document.body.classList.toggle('tab-shift', tab === 'shift');
+  if (tab === 'attend' && currentName() && !punch.loading) loadPunch();
 }
 document.querySelectorAll('nav.tabs a').forEach(function (a) {
   a.addEventListener('click', function (ev) { ev.preventDefault(); history.replaceState(null, '', '#' + a.dataset.tab); showTab(a.dataset.tab); });
@@ -659,14 +696,103 @@ $('shiftConfirmOk').addEventListener('click', function (ev) {
 });
 
 // ---------- 勤怠 ----------
+// GAS に結果を返してもらう送り方。Content-Type を付けない（text/plain）POST は事前確認なしで送れて、応答も読める
+async function postJSON(data) {
+  var res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(data) });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return res.json();
+}
+function fmtMin(m) { var h = Math.floor(m / 60), r = Math.round(m % 60); return !h && r ? r + '分' : r ? h + '時間' + r + '分' : h + '時間'; }
+function fmtHours(h) { var n = Number(h); return isNaN(n) || h === '' ? '' : fmtMin(Math.round(n * 60)); }
+function dateLabel(iso) { var dt = new Date(iso + 'T00:00:00'); return (dt.getMonth() + 1) + '/' + dt.getDate() + '（' + DOW[dt.getDay()] + '）'; }
+function nowHM() { var d = new Date(); return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+function toMin(t) { var m = String(t || '').match(/^(\d{1,2}):(\d{2})/); return m ? Number(m[1]) * 60 + Number(m[2]) : null; }
+
+// 今日の打刻（状態: none＝未出勤 / working＝勤務中 / done＝退勤済み）
+var punch = { status: null, loading: false, seq: 0 };
+function pBreakVal() { var r = document.querySelector('input[name=pBreak]:checked'); return r ? r.value : null; }
+function showResult(msg, ng) {
+  var p = $('pResult'); p.hidden = !msg; p.className = 'result' + (ng ? ' ng' : '');
+  p.querySelector('use').setAttribute('href', ng ? '#i-alert' : '#i-check'); p.querySelector('span').textContent = msg || '';
+}
+function renderPunch() {
+  var st = punch.status, name = currentName();
+  $('pDate').textContent = st ? dateLabel(st.date) + ' の記録' : '';
+  var s = $('pState'), sub = $('pSub');
+  s.className = 'st';
+  if (!name) { s.textContent = '—'; sub.textContent = '先に名前を選んでください'; }
+  else if (punch.loading && !st) { s.textContent = '読み込み中…'; sub.textContent = ''; }
+  else if (!st) { s.textContent = '—'; sub.textContent = '状態を読み込めませんでした。「状態を読み直す」を押してください'; }
+  else if (st.state === 'none') { s.textContent = '未出勤'; sub.textContent = '出勤したら「出勤する」を押してください'; }
+  else if (st.state === 'working') {
+    s.textContent = '勤務中（' + st.start + '〜）'; s.classList.add('work');
+    var b = pBreakVal(), w = toMin(nowHM()) - toMin(st.start) - (b == null ? 0 : parseFloat(b) * 60);
+    sub.textContent = b == null ? '帰るときは、休憩を選んで「退勤する」を押してください' : '今退勤すると、実働 ' + (w > 0 ? fmtMin(w) : '0時間') + '（休憩 ' + (b === '0' ? 'なし' : fmtMin(parseFloat(b) * 60)) + '）';
+  } else {
+    s.textContent = '退勤済み（' + st.start + '〜' + st.end + '）'; s.classList.add('ok');
+    sub.textContent = '実働 ' + (fmtHours(st.hours) || '—') + '・休憩 ' + (Number(st.breakH) ? fmtHours(st.breakH) : 'なし') + '。直すときは下の「打刻を忘れた日・過去の日を入力する」から';
+  }
+  var busy = punch.loading || $('pIn').getAttribute('aria-busy') === 'true' || $('pOut').getAttribute('aria-busy') === 'true';
+  $('pIn').disabled = busy || !name || !st || st.state !== 'none';
+  $('pOut').disabled = busy || !name || !st || st.state !== 'working' || pBreakVal() == null;
+  $('pBreak').classList.toggle('hidden', !st || st.state !== 'working'); // 休憩は勤務中（退勤の前）だけ出す
+  $('pReload').disabled = punch.loading || !name;
+}
+async function loadPunch() {
+  var name = currentName(), my = ++punch.seq;
+  punch.status = null; showResult('');
+  if (!name) { renderPunch(); return; }
+  punch.loading = true; renderPunch();
+  try {
+    var res = await fetch(GAS_URL + '?action=attendStatus&name=' + encodeURIComponent(name));
+    var data = await res.json();
+    if (my !== punch.seq) return; // 途中で名前が変わった
+    if (!data.ok) { showResult(data.message || '状態を読み込めませんでした', true); }
+    else punch.status = data.status;
+  } catch (e) {
+    if (my === punch.seq) showResult('状態を読み込めませんでした。通信を確認して「状態を読み直す」を押してください', true);
+  } finally {
+    if (my === punch.seq) { punch.loading = false; renderPunch(); }
+  }
+}
+async function doPunch(btn, payload) {
+  if (!requireName() || btn.getAttribute('aria-busy') === 'true') return;
+  btn.setAttribute('aria-busy', 'true'); renderPunch(); showResult('');
+  var name = currentName();
+  try {
+    var r = await postJSON(payload);
+    if (name !== currentName()) return;
+    if (r.status) punch.status = r.status;
+    if (r.ok) {
+      var st = r.status || {};
+      showResult(r.already ? '今日はすでに ' + st.start + ' に出勤を記録しています（新しくは記録していません）'
+        : payload.type === 'clockIn' ? st.start + ' に出勤を記録しました（勤怠記録に保存されたことを確認済み）'
+        : st.end + ' に退勤を記録しました。実働 ' + (fmtHours(st.hours) || '—') + '（勤怠記録に保存されたことを確認済み）', false);
+      toast(payload.type === 'clockIn' ? '出勤を記録しました' : '退勤を記録しました');
+    } else showResult(r.message || '記録できませんでした', true);
+  } catch (e) {
+    // 届いたかどうか分からないので、状態を読み直して画面に出す
+    showResult('結果を受け取れませんでした。今の状態を読み直します。記録されていなければ、もう一度押してください', true);
+    btn.removeAttribute('aria-busy');
+    var keep = $('pResult').querySelector('span').textContent;
+    await loadPunch(); showResult(keep, true); return;
+  } finally {
+    btn.removeAttribute('aria-busy'); renderPunch();
+  }
+}
+$('pIn').addEventListener('click', function (ev) { doPunch(ev.currentTarget, { type: 'clockIn', name: currentName() }); });
+$('pOut').addEventListener('click', function (ev) { doPunch(ev.currentTarget, { type: 'clockOut', name: currentName(), actualBreak: pBreakVal() }); });
+$('pReload').addEventListener('click', loadPunch);
+document.querySelectorAll('input[name=pBreak]').forEach(function (r) { r.addEventListener('change', renderPunch); });
+setInterval(function () { if (punch.status && punch.status.state === 'working') renderPunch(); }, 30000);
+
+// 打刻を忘れた日・過去の日（出勤と退勤をまとめて入れる）
 function todayISO() { var d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
 function breakVal() { return (document.querySelector('input[name=aBreak]:checked') || {}).value || '0'; }
 function workedMinutes() {
   var s = $('aStart').value, e = $('aEnd').value; if (!s || !e) return null;
-  var a = s.split(':').map(Number), b = e.split(':').map(Number);
-  return (b[0] * 60 + b[1]) - (a[0] * 60 + a[1]) - parseFloat(breakVal()) * 60;
+  return toMin(e) - toMin(s) - parseFloat(breakVal()) * 60;
 }
-function fmtMin(m) { var h = Math.floor(m / 60), r = m % 60; return r ? h + '時間' + r + '分' : h + '時間'; }
 function updateWorked() {
   var s = $('aStart').value, e = $('aEnd').value, bad = !!(s && e && e <= s);
   $('aTimeErr').hidden = !bad; $('aEnd').classList.toggle('invalid', bad);
@@ -683,12 +809,12 @@ $('attendCheck').addEventListener('click', function () {
   if (!s || !e) { (s ? $('aEnd') : $('aStart')).focus(); toast('出勤と退勤の時刻を入れてください', true); return; }
   if (e <= s) { $('aEnd').focus(); toast('退勤は出勤より後の時刻にしてください', true); return; }
   if (!(m > 0)) { toast('休憩が勤務時間より長くなっています', true); return; }
-  var b = breakVal(), dt = new Date(d + 'T00:00:00');
-  // 旧フォームと同じ形（actualBreak は時間単位の文字列 '0' / '0.5' / '1' / '1.5'）
+  var b = breakVal();
+  // actualBreak は時間単位の文字列 '0' / '0.5' / '1' / '1.5'
   attendPayload = { type: 'attendance', name: currentName(), date: d, actualStart: s, actualEnd: e, actualBreak: b, note: $('aNote').value || '' };
   var list = $('acList'); clear(list);
   sumRow(list, '名前', currentName());
-  sumRow(list, '日付', (dt.getMonth() + 1) + '/' + dt.getDate() + '（' + DOW[dt.getDay()] + '）');
+  sumRow(list, '日付', dateLabel(d));
   sumRow(list, '出勤〜退勤', s + '〜' + e);
   sumRow(list, '休憩', b === '0' ? 'なし' : fmtMin(parseFloat(b) * 60));
   sumRow(list, '実働', fmtMin(m));
@@ -697,14 +823,22 @@ $('attendCheck').addEventListener('click', function () {
 });
 $('attendConfirmOk').addEventListener('click', function (ev) {
   var p = attendPayload; if (!p) return;
-  guarded(ev.currentTarget, async function () {
-    await postToGAS(p);
-    $('attendConfirm').close(); attendPayload = null;
-    var dt = new Date(p.date + 'T00:00:00');
-    $('attendDoneText').textContent = (dt.getMonth() + 1) + '/' + dt.getDate() + '（' + DOW[dt.getDay()] + '）' + p.actualStart + '〜' + p.actualEnd + ' を送りました。';
-    $('attendCard').classList.add('hidden'); $('attendDone').classList.remove('hidden');
-    toast('勤怠を記録しました');
-  });
+  var btn = ev.currentTarget;
+  if (btn.getAttribute('aria-busy') === 'true') return;
+  btn.setAttribute('aria-busy', 'true'); btn.disabled = true;
+  (async function () {
+    try {
+      var r = await postJSON(p);
+      if (!r.ok) { toast(r.message || '記録できませんでした', true); return; }
+      $('attendConfirm').close(); attendPayload = null;
+      $('attendDoneText').textContent = dateLabel(p.date) + ' ' + p.actualStart + '〜' + p.actualEnd + (r.mode === 'updated' ? ' に直しました（同じ日の記録を上書き・備考に「修正」）。' : ' を記録しました。') + '勤怠記録に保存されたことを確認済みです。';
+      $('attendCard').classList.add('hidden'); $('attendDone').classList.remove('hidden');
+      toast(r.mode === 'updated' ? 'この日の記録を直しました' : '勤怠を記録しました');
+      if (p.date === (punch.status && punch.status.date)) loadPunch();
+    } catch (e) {
+      toast('結果を受け取れませんでした。通信を確認してください。同じ日を送り直しても記録は1行のままです', true);
+    } finally { btn.removeAttribute('aria-busy'); btn.disabled = false; }
+  })();
 });
 $('attendAgain').addEventListener('click', function () {
   $('aStart').value = ''; $('aEnd').value = ''; $('aNote').value = ''; $('aDate').value = todayISO();
