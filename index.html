@@ -203,6 +203,12 @@
   .sum-list div { display: flex; justify-content: space-between; gap: 10px; padding: 7px 12px; border-bottom: 1px solid var(--border); font-size: 13px; font-variant-numeric: tabular-nums; }
   .sum-list div:last-child { border-bottom: none; }
   .sum-list .none { color: var(--text3); }
+  /* 確認画面の名前（共用PCで別の人の名前のまま送らないように大きく出す） */
+  .who-big { margin: 4px 0 10px; padding: 14px 16px; border-radius: var(--r-md); background: var(--accent-soft); color: var(--navy); }
+  .who-big b { display: block; font-size: 26px; line-height: 1.3; color: var(--accent); word-break: break-all; }
+  .who-big span { display: block; font-size: 15px; font-weight: 700; }
+  .who-big small { display: block; margin-top: 6px; font-size: 12px; color: var(--text2); font-weight: 600; }
+  .notice.warn { background: var(--warn-soft); color: var(--warn); }
 
   #toast { position: fixed; left: 16px; right: 16px; bottom: calc(var(--tabbar) + 16px + env(safe-area-inset-bottom)); max-width: 520px; margin: 0 auto; padding: 12px 16px; border-radius: var(--r-lg);
     background: var(--text); color: var(--bg); display: none; z-index: 30; font-weight: 600; font-size: 14px; box-shadow: 0 8px 30px rgba(0, 0, 0, .22); }
@@ -213,7 +219,7 @@
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 </style>
 </head>
-<body class="tab-shift">
+<body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></symbol>
   <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
@@ -235,7 +241,7 @@
   <div class="card who-card">
     <div>
       <label for="nameSel">名前</label>
-      <select id="nameSel"><option value="">読み込み中…</option></select>
+      <select id="nameSel" autocomplete="off"><option value="">読み込み中…</option></select>
     </div>
     <button id="nameRetry" type="button" class="secondary small hidden">再読み込み</button>
     <p id="nameErr" class="ferr" hidden></p>
@@ -243,21 +249,23 @@
 
   <div class="tabwrap">
     <nav class="tabs" aria-label="画面の切り替え">
-      <a href="#shift" data-tab="shift" aria-current="page"><svg class="i" aria-hidden="true"><use href="#i-cal"/></svg>シフト希望</a>
-      <a href="#attend" data-tab="attend"><svg class="i" aria-hidden="true"><use href="#i-clock"/></svg>勤怠記録</a>
+      <a href="#attend" data-tab="attend" aria-current="page"><svg class="i" aria-hidden="true"><use href="#i-clock"/></svg>勤怠（出勤・退勤）</a>
+      <a href="#shift" data-tab="shift"><svg class="i" aria-hidden="true"><use href="#i-cal"/></svg>シフト希望</a>
     </nav>
   </div>
 
   <!-- シフト希望 -->
-  <div data-panel="shift">
+  <div data-panel="shift" class="hidden">
     <div class="card">
       <h2><svg class="i"><use href="#i-cal"/></svg>シフト希望の提出</h2>
       <label for="periodSel">対象期間</label>
       <select id="periodSel"></select>
       <div class="period-meta"><span id="periodBadge"></span><span id="deadlineNote" class="muted"></span></div>
       <p class="muted" style="margin:6px 0 0">土日は休みです。祝日は赤で表示しています。</p>
+      <div id="startedNotice" class="notice warn hidden" role="status"><svg class="i"><use href="#i-alert"/></svg><span>この期間はもう始まっているため、フォームからは提出できません。今の期間の変更は林さんに連絡してください。</span></div>
       <div id="draftNotice" class="notice hidden" role="status"><svg class="i"><use href="#i-sync"/></svg><span>前回の未提出の入力を、この端末から復元しました（まだ提出していません）。</span><button id="draftDiscard" type="button" class="small secondary">破棄</button></div>
 
+      <div id="shiftInputs">
       <details class="bulk" id="bulkPanel">
         <summary><svg class="i" aria-hidden="true"><use href="#i-bolt"/></svg>まとめて入力<svg class="i chev" aria-hidden="true"><use href="#i-chev"/></svg></summary>
         <div class="bulk-body">
@@ -284,6 +292,7 @@
       <div id="dayRows" class="days"></div>
       <label for="shiftNote">備考（任意）</label>
       <input id="shiftNote" maxlength="500" placeholder="例: 水曜は14時以降なら可">
+      </div>
     </div>
     <div class="dock" id="shiftDock">
       <div class="prog">
@@ -296,7 +305,7 @@
   </div>
 
   <!-- 勤怠記録 -->
-  <div data-panel="attend" class="hidden">
+  <div data-panel="attend">
     <div class="card" id="punchCard">
       <h2><svg class="i"><use href="#i-clock"/></svg>今日の打刻</h2>
       <p class="muted" style="margin:0">出勤したときに「出勤する」、帰るときに休憩を選んで「退勤する」を押します。押した時刻で記録されます。</p>
@@ -354,7 +363,7 @@
 <dialog id="shiftConfirm" class="sheet" aria-labelledby="scTitle">
   <div class="sheet-head"><h2 id="scTitle">提出内容の確認</h2><button type="button" class="x" data-close aria-label="閉じる"><svg class="i"><use href="#i-x"/></svg></button></div>
   <div class="sheet-body">
-    <p id="scWho" style="margin:0;font-weight:800"></p>
+    <div class="who-big" id="scWho"></div>
     <div class="legend" id="scCounts"></div>
     <div class="sum-list" id="scList"></div>
     <p id="scNote" class="muted" style="margin:0 0 8px"></p>
@@ -366,8 +375,15 @@
 <!-- 勤怠の確認 -->
 <dialog id="attendConfirm" class="sheet" aria-labelledby="acTitle">
   <div class="sheet-head"><h2 id="acTitle">記録内容の確認</h2><button type="button" class="x" data-close aria-label="閉じる"><svg class="i"><use href="#i-x"/></svg></button></div>
-  <div class="sheet-body"><div class="sum-list" id="acList"></div></div>
+  <div class="sheet-body"><div class="who-big" id="acWho"></div><div class="sum-list" id="acList"></div></div>
   <div class="sheet-foot"><button type="button" class="secondary" data-close>戻って修正</button><button type="button" id="attendConfirmOk">この内容で記録する</button></div>
+</dialog>
+
+<!-- 打刻の確認 -->
+<dialog id="punchConfirm" class="sheet" aria-labelledby="pcTitle">
+  <div class="sheet-head"><h2 id="pcTitle">打刻の確認</h2><button type="button" class="x" data-close aria-label="閉じる"><svg class="i"><use href="#i-x"/></svg></button></div>
+  <div class="sheet-body"><div class="who-big" id="pcWho"></div><div class="sum-list" id="pcList"></div></div>
+  <div class="sheet-foot"><button type="button" class="secondary" data-close>戻る</button><button type="button" id="punchConfirmOk">記録する</button></div>
 </dialog>
 
 <div id="toast" role="status" aria-live="polite"></div>
@@ -400,9 +416,16 @@ function mkBadge(text, tone, ic) { var b = el('span', null, 'badge ' + (tone || 
 var toastTimer;
 function toast(msg, ng) { var t = $('toast'); t.textContent = msg; t.className = 'show' + (ng ? ' ng' : ''); clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.className = ''; }, ng ? 6000 : 3500); }
 
-// ---------- 名前（マスタの「メンバー設定」から取得。最後に選んだ名前をこの端末に覚える） ----------
-var NAME_KEY = 'sf_name';
+// ---------- 名前（マスタの「メンバー設定」から取得） ----------
+// 共用PCで前の人の名前のまま送られないように、名前は端末に覚えない。開くたびに未選択から始める（2026-11-13〜）
+store('sf_name', null); // 以前の版が覚えていた名前を消す
 function currentName() { return $('nameSel').value; }
+function whoBig(box, lead, tail) {
+  clear(box);
+  box.appendChild(el('b', currentName() + ' さん'));
+  box.appendChild(el('span', lead));
+  box.appendChild(el('small', tail || 'ご自分の名前でなければ、戻って名前を選び直してください。'));
+}
 async function loadMembers() {
   var sel = $('nameSel');
   $('nameErr').hidden = true; $('nameRetry').classList.add('hidden');
@@ -415,8 +438,7 @@ async function loadMembers() {
     clear(sel);
     var ph = el('option', '選んでください'); ph.value = ''; sel.appendChild(ph);
     names.forEach(function (n) { var o = el('option', n); o.value = n; sel.appendChild(o); });
-    var saved = load(NAME_KEY);
-    if (saved && names.indexOf(saved) >= 0) sel.value = saved;
+    sel.value = '';
   } catch (e) {
     clear(sel); var o = el('option', '名前を読み込めませんでした'); o.value = ''; sel.appendChild(o);
     $('nameErr').textContent = '名前の一覧を読み込めませんでした。通信を確認して「再読み込み」を押してください。続く場合は林さんに連絡してください。';
@@ -424,7 +446,13 @@ async function loadMembers() {
   }
   onNameChanged();
 }
-$('nameSel').addEventListener('change', function () { store(NAME_KEY, currentName() || null); onNameChanged(); });
+$('nameSel').addEventListener('change', onNameChanged);
+// 「戻る」などでページが復元されたときも名前は未選択に戻す
+window.addEventListener('pageshow', function (ev) {
+  if (!ev.persisted) return;
+  document.querySelectorAll('dialog[open]').forEach(function (d) { d.close(); });
+  $('nameSel').value = ''; onNameChanged();
+});
 $('nameRetry').addEventListener('click', loadMembers);
 function onNameChanged() {
   $('who').textContent = currentName() ? currentName() + ' さん' : 'ネクスゲート';
@@ -440,7 +468,7 @@ function requireName() {
 
 // ---------- タブ ----------
 function showTab(tab) {
-  if (tab !== 'attend') tab = 'shift';
+  if (tab !== 'shift') tab = 'attend'; // 最初に開くのは勤怠（出勤・退勤）
   document.querySelectorAll('[data-panel]').forEach(function (p) { p.classList.toggle('hidden', p.dataset.panel !== tab); });
   document.querySelectorAll('nav.tabs a').forEach(function (a) { if (a.dataset.tab === tab) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   document.body.classList.toggle('tab-shift', tab === 'shift');
@@ -472,11 +500,14 @@ function buildPeriods() {
 var PERIODS = buildPeriods();
 function periodByValue(v) { return PERIODS.filter(function (p) { return p.value === v; })[0]; }
 function isLate(p) { return Date.now() > p.deadline.getTime(); }
+// もう始まっている期間はフォームから出さない（今の期間の変更は林さんへ連絡）
+function isStarted(p) { return Date.now() >= new Date(p.y, p.m - 1, p.from).getTime(); }
 function fmtDeadline(d) { return (d.getMonth() + 1) + '/' + d.getDate() + '（' + DOW[d.getDay()] + '）19:00'; }
 (function initPeriods() {
   var sel = $('periodSel');
-  PERIODS.forEach(function (p) { var o = el('option', p.label + (isLate(p) ? '（期限後）' : '')); o.value = p.value; sel.appendChild(o); });
-  var open = PERIODS.filter(function (p) { return !isLate(p); })[0];
+  PERIODS.forEach(function (p) { var o = el('option', p.label + (isStarted(p) ? '（期間中・提出できません）' : isLate(p) ? '（期限後）' : '')); o.value = p.value; sel.appendChild(o); });
+  var notStarted = PERIODS.filter(function (p) { return !isStarted(p); });
+  var open = notStarted.filter(function (p) { return !isLate(p); })[0] || notStarted[0];
   sel.value = (open || PERIODS[0]).value;
   sel.addEventListener('change', function () { shiftUI.period = null; renderDayRows(); });
 })();
@@ -526,6 +557,17 @@ function renderDayRows() {
   var v = $('periodSel').value, p = periodByValue(v); shiftUI.period = v;
   var box = $('dayRows'); clear(box);
   if (!p) return;
+  var started = isStarted(p);
+  $('startedNotice').classList.toggle('hidden', !started);
+  $('shiftInputs').classList.toggle('hidden', started);
+  $('shiftDock').classList.toggle('hidden', started);
+  if (started) {
+    $('draftNotice').classList.add('hidden');
+    var sb = $('periodBadge'); clear(sb); sb.appendChild(mkBadge('期間中', 'ng', 'i-alert'));
+    $('deadlineNote').textContent = '';
+    shiftUI.saved = {}; shiftUI.savedNote = ''; shiftUI.submitted = 0;
+    return;
+  }
   // この端末で最後に提出した内容を「提出済み」として扱う（変更があるかの判定に使う）
   var sub = currentName() ? loadJSON(keyOf('sub', v)) : null;
   shiftUI.saved = sub ? sub.days : {}; shiftUI.savedNote = sub ? (sub.note || '') : ''; shiftUI.submitted = sub ? sub.version : 0;
@@ -653,6 +695,7 @@ function sumRow(list, l, v, muted) { var line = el('div'); line.appendChild(el('
 $('shiftSubmit').addEventListener('click', function () {
   if (!requireName()) return;
   var p = periodByValue(shiftUI.period); if (!p) return;
+  if (isStarted(p)) { shiftUI.period = null; renderDayRows(); toast('この期間はもう始まっているため提出できません。今の期間の変更は林さんに連絡してください', true); return; }
   var bad = dayRowEls().filter(function (r) { return !validateRow(r); });
   if (bad.length) { bad[0].scrollIntoView({ block: 'center' }); toast(bad[0].dataset.text + ' の終了時刻が開始時刻より前です', true); return; }
   var days = [], saved = {}, list = $('scList'); clear(list);
@@ -665,7 +708,7 @@ $('shiftSubmit').addEventListener('click', function () {
     sumRow(list, r.dataset.text, v.kind === 'WORK' ? '出勤可 ' + value : v.kind === 'OFF' ? '希望休' : '未選択（出勤不可）', v.kind !== 'WORK');
   });
   var c = shiftCounts();
-  $('scWho').textContent = currentName() + ' さん・' + p.label;
+  whoBig($('scWho'), 'として、' + p.label + ' のシフト希望を提出します');
   var cc = $('scCounts'); clear(cc);
   cc.appendChild(mkBadge('出勤可 ' + c.WORK + '日', 'ok', 'i-check')); cc.appendChild(mkBadge('希望休 ' + c.OFF + '日', '', 'i-minus')); cc.appendChild(mkBadge('未選択 ' + c.none + '日', c.none ? 'warn' : '', 'i-alert'));
   $('scNote').textContent = $('shiftNote').value ? '備考: ' + $('shiftNote').value : '';
@@ -685,6 +728,12 @@ async function guarded(btn, fn) {
 }
 $('shiftConfirmOk').addEventListener('click', function (ev) {
   var p = shiftUI.payload; if (!p) return;
+  var per = periodByValue(p.week);
+  if (!per || isStarted(per) || p.name !== currentName()) {
+    $('shiftConfirm').close(); shiftUI.payload = null; shiftUI.period = null; renderDayRows();
+    toast(per && isStarted(per) ? 'この期間はもう始まっているため提出できません。今の期間の変更は林さんに連絡してください' : 'もう一度「提出する」から確認してください', true);
+    return;
+  }
   guarded(ev.currentTarget, async function () {
     await postToGAS(p);
     var ver = (shiftUI.submitted || 0) + 1;
@@ -780,8 +829,32 @@ async function doPunch(btn, payload) {
     btn.removeAttribute('aria-busy'); renderPunch();
   }
 }
-$('pIn').addEventListener('click', function (ev) { doPunch(ev.currentTarget, { type: 'clockIn', name: currentName() }); });
-$('pOut').addEventListener('click', function (ev) { doPunch(ev.currentTarget, { type: 'clockOut', name: currentName(), actualBreak: pBreakVal() }); });
+// 押したらすぐ送らず、名前を大きく出した確認画面を挟む（共用PCで前の人の名前のまま打刻しないように）
+var punchPending = null;
+function confirmPunch(btn, payload) {
+  if (!requireName()) return;
+  punchPending = { btn: btn, payload: payload };
+  var isIn = payload.type === 'clockIn', list = $('pcList'); clear(list);
+  whoBig($('pcWho'), isIn ? 'として、出勤を記録します' : 'として、退勤を記録します');
+  sumRow(list, '日付', punch.status ? dateLabel(punch.status.date) : '今日');
+  if (isIn) sumRow(list, '出勤', '今の時刻（' + nowHM() + ' ごろ）');
+  else {
+    var b = payload.actualBreak, w = toMin(nowHM()) - toMin(punch.status.start) - parseFloat(b) * 60;
+    sumRow(list, '出勤〜退勤', punch.status.start + '〜今の時刻（' + nowHM() + ' ごろ）');
+    sumRow(list, '休憩', b === '0' ? 'なし' : fmtMin(parseFloat(b) * 60));
+    sumRow(list, '実働（見込み）', w > 0 ? fmtMin(w) : '0時間');
+  }
+  $('punchConfirmOk').textContent = isIn ? '出勤を記録する' : '退勤を記録する';
+  openSheet($('punchConfirm'));
+}
+$('pIn').addEventListener('click', function (ev) { confirmPunch(ev.currentTarget, { type: 'clockIn', name: currentName() }); });
+$('pOut').addEventListener('click', function (ev) { confirmPunch(ev.currentTarget, { type: 'clockOut', name: currentName(), actualBreak: pBreakVal() }); });
+$('punchConfirmOk').addEventListener('click', function () {
+  var pp = punchPending; punchPending = null;
+  $('punchConfirm').close();
+  if (!pp || pp.payload.name !== currentName()) { toast('もう一度押してください', true); return; }
+  doPunch(pp.btn, pp.payload);
+});
 $('pReload').addEventListener('click', loadPunch);
 document.querySelectorAll('input[name=pBreak]').forEach(function (r) { r.addEventListener('change', renderPunch); });
 setInterval(function () { if (punch.status && punch.status.state === 'working') renderPunch(); }, 30000);
@@ -813,7 +886,7 @@ $('attendCheck').addEventListener('click', function () {
   // actualBreak は時間単位の文字列 '0' / '0.5' / '1' / '1.5'
   attendPayload = { type: 'attendance', name: currentName(), date: d, actualStart: s, actualEnd: e, actualBreak: b, note: $('aNote').value || '' };
   var list = $('acList'); clear(list);
-  sumRow(list, '名前', currentName());
+  whoBig($('acWho'), 'として、勤怠を記録します');
   sumRow(list, '日付', dateLabel(d));
   sumRow(list, '出勤〜退勤', s + '〜' + e);
   sumRow(list, '休憩', b === '0' ? 'なし' : fmtMin(parseFloat(b) * 60));
@@ -823,6 +896,7 @@ $('attendCheck').addEventListener('click', function () {
 });
 $('attendConfirmOk').addEventListener('click', function (ev) {
   var p = attendPayload; if (!p) return;
+  if (p.name !== currentName()) { $('attendConfirm').close(); attendPayload = null; toast('もう一度「内容を確認する」から確認してください', true); return; }
   var btn = ev.currentTarget;
   if (btn.getAttribute('aria-busy') === 'true') return;
   btn.setAttribute('aria-busy', 'true'); btn.disabled = true;
